@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>snap</title>
+    <title>스냅 복습</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
@@ -51,6 +51,19 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Pretendard", "Noto Sans KR", sans-serif;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+            background-color: #000000;
+            color: #f1f5f9;
+            height: 100vh;
+            height: 100dvh;
+        }
+
         .card-transition {
             transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.18s ease;
         }
@@ -78,7 +91,7 @@
             transition: color 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
             color: rgba(255, 255, 255, 0.4);
             font-weight: 500;
-            padding: 0.35rem 0.75rem;
+            padding: 0.25rem 0.65rem;
             cursor: pointer;
             white-space: nowrap;
             transform: scale(0.92);
@@ -91,12 +104,20 @@
             opacity: 1;
         }
 
-        /* Glassmorphism Header & Footer */
-        .app-header, .app-footer {
+        /* Glassmorphism Header & Footer with Safe Area Support */
+        .app-header {
             background-color: rgba(0, 0, 0, 0.85);
             border-color: rgba(255, 255, 255, 0.08);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
+            padding-top: max(0.6rem, env(safe-area-inset-top));
+        }
+        .app-footer {
+            background-color: rgba(0, 0, 0, 0.85);
+            border-color: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding-bottom: max(0.6rem, env(safe-area-inset-bottom));
         }
         .app-card-bg {
             background-color: #0d0d0d;
@@ -120,10 +141,10 @@
 
         /* iOS Camera Shutter / Action Button */
         .shutter-outer {
-            width: 4.2rem;
-            height: 4.2rem;
+            width: 3.8rem;
+            height: 3.8rem;
             border-radius: 9999px;
-            border: 3.5px solid #ffffff;
+            border: 3px solid #ffffff;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -198,10 +219,10 @@
         }
     </style>
 </head>
-<body class="min-h-screen font-sans flex flex-col justify-between overflow-hidden antialiased select-none bg-black text-white">
+<body class="h-dvh w-full font-sans flex flex-col justify-between overflow-hidden antialiased select-none bg-black text-white">
 
     <!-- TOP BAR: Minimalist Header -->
-    <header class="app-header w-full pt-safe pt-3 px-6 pb-2 z-20 flex items-center justify-between shrink-0 border-b border-white/10">
+    <header class="app-header w-full px-5 pb-2 z-20 flex items-center justify-between shrink-0 border-b border-white/10">
         <!-- 스냅 개수 정보 -->
         <div class="flex items-center gap-1.5 opacity-80">
             <i class="fa-solid fa-bolt text-[11px] text-iosYellow"></i>
@@ -217,9 +238,9 @@
     </header>
 
     <!-- MAIN REVIEW & CAMERA VIEWPORT CONTAINER -->
-    <main class="flex-1 relative w-full flex flex-col items-center justify-center p-3 sm:p-4 overflow-hidden">
+    <main class="flex-1 min-h-0 relative w-full flex flex-col items-center justify-center p-2 sm:p-4 overflow-hidden">
         
-        <div id="card-viewport" class="relative w-full max-w-md h-[calc(100vh-220px)] flex items-center justify-center cursor-pointer rounded-3xl overflow-hidden app-card-bg border border-white/10 shadow-2xl">
+        <div id="card-viewport" class="relative w-full max-w-md h-full max-h-full flex items-center justify-center cursor-pointer rounded-3xl overflow-hidden app-card-bg border border-white/10 shadow-2xl">
             
             <!-- 카드 본체 -->
             <div id="flashcard" class="w-full h-full flex flex-col items-center justify-center relative p-2 card-transition">
@@ -271,10 +292,10 @@
     <input type="file" id="direct-file-input" accept="image/*" class="hidden">
 
     <!-- BOTTOM CONTROLS: UNIFIED APPLE CAMERA CONTROL BAR -->
-    <footer class="app-footer w-full pb-safe pb-4 pt-2 px-4 z-20 shrink-0 flex flex-col items-center gap-3 border-t border-white/10">
+    <footer class="app-footer w-full pt-1.5 px-4 z-20 shrink-0 flex flex-col items-center gap-2 border-t border-white/10">
         
         <!-- 1. 유형 선택 필터: [ 개념 ] [ 전체 ] [ 문제 ] -->
-        <div class="flex items-center justify-center gap-2.5">
+        <div class="flex items-center justify-center gap-2">
             <button id="type-filter-concept" class="camera-zoom-pill">
                 개념
             </button>
@@ -287,16 +308,16 @@
         </div>
 
         <!-- 2. 통일된 5개 버튼 하단 조작 바 (모드 변경 시에도 레이아웃 유지) -->
-        <div id="unified-action-bar" class="w-full max-w-md grid grid-cols-5 items-center justify-items-center gap-1 pt-1">
+        <div id="unified-action-bar" class="w-full max-w-md grid grid-cols-5 items-center justify-items-center gap-1">
             
             <!-- 1st: 앨범 선택 버튼 -->
-            <button id="btn-album-preview" class="w-11 h-11 rounded-2xl border border-white/20 bg-zinc-900 overflow-hidden flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition relative" title="앨범에서 가져오기">
+            <button id="btn-album-preview" class="w-10 h-10 rounded-2xl border border-white/20 bg-zinc-900 overflow-hidden flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition relative" title="앨범에서 가져오기">
                 <img id="album-thumb-img" class="w-full h-full object-cover hidden" alt="앨범" />
                 <i id="album-thumb-icon" class="fa-regular fa-images text-white/70 text-xs"></i>
             </button>
 
             <!-- 2nd: 중요도 낮추기 (-1) -->
-            <button id="btn-weight-down" disabled class="flex flex-col items-center justify-center w-10 h-10 rounded-full bg-white/10 border border-white/10 hover:bg-white/20 text-amber-400 disabled:opacity-20 disabled:pointer-events-none transition active:scale-95" title="중요도 -">
+            <button id="btn-weight-down" disabled class="flex flex-col items-center justify-center w-9 h-9 rounded-full bg-white/10 border border-white/10 hover:bg-white/20 text-amber-400 disabled:opacity-20 disabled:pointer-events-none transition active:scale-95" title="중요도 -">
                 <i class="fa-solid fa-minus text-xs font-bold"></i>
             </button>
 
@@ -308,19 +329,19 @@
             </button>
 
             <!-- 4th: 중요도 높이기 (+1) -->
-            <button id="btn-weight-up" disabled class="flex flex-col items-center justify-center w-10 h-10 rounded-full bg-white/10 border border-white/10 hover:bg-white/20 text-emerald-400 disabled:opacity-20 disabled:pointer-events-none transition active:scale-95" title="중요도 +">
+            <button id="btn-weight-up" disabled class="flex flex-col items-center justify-center w-9 h-9 rounded-full bg-white/10 border border-white/10 hover:bg-white/20 text-emerald-400 disabled:opacity-20 disabled:pointer-events-none transition active:scale-95" title="중요도 +">
                 <i class="fa-solid fa-plus text-xs font-bold"></i>
             </button>
 
             <!-- 5th: 우측 끝 액션 버튼 (스냅 삭제 / 취소) -->
-            <button id="btn-action-right" disabled class="flex flex-col items-center justify-center w-10 h-10 rounded-full bg-white/10 border border-white/10 hover:bg-red-500/20 hover:border-red-500/40 text-white/80 hover:text-red-400 disabled:opacity-20 disabled:pointer-events-none transition active:scale-95" title="삭제 / 취소">
+            <button id="btn-action-right" disabled class="flex flex-col items-center justify-center w-9 h-9 rounded-full bg-white/10 border border-white/10 hover:bg-red-500/20 hover:border-red-500/40 text-white/80 hover:text-red-400 disabled:opacity-20 disabled:pointer-events-none transition active:scale-95" title="삭제 / 취소">
                 <i id="action-right-icon" class="fa-solid fa-trash-can text-xs"></i>
             </button>
 
         </div>
 
         <!-- 3. 과목 모드 가로 슬라이더 -->
-        <div class="w-full max-w-xs relative flex items-center justify-center overflow-hidden py-1">
+        <div class="w-full max-w-xs relative flex items-center justify-center overflow-hidden py-0.5">
             <div class="absolute -top-0.5 w-1 h-1 bg-iosYellow rounded-full z-30 pointer-events-none"></div>
             <div class="w-full camera-mode-container no-scrollbar" id="subject-mode-container">
                 <!-- Dynamically populated subject items -->
