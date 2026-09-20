@@ -1057,43 +1057,51 @@
                 if (item) item.weight = newWeight;
             },
 
-            triggerNextCardAnimation(direction = 'up') {
+            triggerNextCardAnimation(direction = 'up', startY = 0) {
                 if (this.isAnimating || this.isCameraActive || this.isStagingSnap) return;
                 const card = document.getElementById('flashcard');
                 if (!card) return;
 
                 this.isAnimating = true;
-                const exitY = direction === 'up' ? -70 : 70;
-                const enterY = direction === 'up' ? 50 : -50;
 
-                // 1st Step: Smooth slide out current photo (Maintain partial opacity so dark background won't flash)
-                card.style.transition = 'transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.18s ease-out';
-                card.style.transform = `translate3d(0, ${exitY}px, 0) scale(0.96)`;
-                card.style.opacity = '0.35';
+                const isUp = direction === 'up';
+                const exitY = isUp ? '-110%' : '110%';
+                const enterY = isUp ? '110%' : '-110%';
+
+                // 손가락으로 드래그 중이던 위치에서 자연스럽게 이어서 전환 시작
+                if (startY !== 0) {
+                    card.style.transform = `translate3d(0, ${startY}px, 0) scale(0.96)`;
+                }
+                
+                void card.offsetHeight;
+
+                // 1단계: 기존 카드가 멈춤 없이 뷰포트 밖으로 완전히 빠르게 가속하며 이탈
+                card.style.transition = 'transform 0.18s cubic-bezier(0.4, 0, 0.6, 1), opacity 0.18s ease-in';
+                card.style.transform = `translate3d(0, ${exitY}, 0) scale(0.92)`;
+                card.style.opacity = '0';
 
                 setTimeout(() => {
-                    // Update photo data while card is scaled
+                    // 화면 밖에서 다음 사진 데이터 교체
                     this.selectNextPhoto();
 
-                    // Instantly set position to incoming direction without visual jump
+                    // 다음 카드를 반대편 화면 바깥에 즉시 배치 (애니메이션 없음)
                     card.style.transition = 'none';
-                    card.style.transform = `translate3d(0, ${enterY}px, 0) scale(0.96)`;
-                    card.style.opacity = '0.35';
+                    card.style.transform = `translate3d(0, ${enterY}, 0) scale(0.92)`;
+                    card.style.opacity = '0';
                     
-                    // Force reflow
                     void card.offsetHeight;
 
-                    // 2nd Step: Smooth slide in new photo like Reels / Shorts feed
+                    // 2단계: 새 카드가 부드럽게 감속하며 중앙으로 들어옴
                     requestAnimationFrame(() => {
-                        card.style.transition = 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1)';
+                        card.style.transition = 'transform 0.24s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease-out';
                         card.style.transform = 'translate3d(0, 0, 0) scale(1)';
                         card.style.opacity = '1';
 
                         setTimeout(() => {
                             this.isAnimating = false;
-                        }, 250);
+                        }, 240);
                     });
-                }, 180);
+                }, 170);
             },
 
             bindEvents() {
@@ -1209,7 +1217,7 @@
                     // 1. Swipe Up / Down (Reels / TikTok style photo slide)
                     if (Math.abs(diffY) > 40 && Math.abs(diffY) > Math.abs(diffX)) {
                         const direction = diffY < 0 ? 'up' : 'down';
-                        this.triggerNextCardAnimation(direction);
+                        this.triggerNextCardAnimation(direction, diffY);
                     } 
                     // 2. Horizontal Swipe for Type Filter (Concept / All / Problem)
                     else if (Math.abs(diffX) > 45 && Math.abs(diffX) > Math.abs(diffY)) {
