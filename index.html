@@ -65,7 +65,8 @@
         }
 
         .card-transition {
-            transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.18s ease;
+            transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+            will-change: transform, opacity;
         }
 
         /* Strictly horizontal scrolling for subject slider */
@@ -569,8 +570,12 @@
             mediaStream: null,
             isSliderScrolling: false,
 
+            // Reels/Shorts style smooth touch & animation states
             touchStartX: 0,
             touchStartY: 0,
+            touchMoveY: 0,
+            isDraggingCard: false,
+            isAnimating: false,
             lastTapTime: 0,
 
             // 동적 비율 맞춤 함수 (카메라/이미지 원본 비율 반영)
@@ -1052,16 +1057,43 @@
                 if (item) item.weight = newWeight;
             },
 
-            triggerNextCardAnimation() {
+            triggerNextCardAnimation(direction = 'up') {
+                if (this.isAnimating || this.isCameraActive || this.isStagingSnap) return;
                 const card = document.getElementById('flashcard');
-                card.style.opacity = '0';
-                card.style.transform = 'scale(0.96)';
+                if (!card) return;
+
+                this.isAnimating = true;
+                const exitY = direction === 'up' ? -70 : 70;
+                const enterY = direction === 'up' ? 50 : -50;
+
+                // 1st Step: Smooth slide out current photo (Maintain partial opacity so dark background won't flash)
+                card.style.transition = 'transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.18s ease-out';
+                card.style.transform = `translate3d(0, ${exitY}px, 0) scale(0.96)`;
+                card.style.opacity = '0.35';
 
                 setTimeout(() => {
+                    // Update photo data while card is scaled
                     this.selectNextPhoto();
-                    card.style.opacity = '1';
-                    card.style.transform = 'scale(1)';
-                }, 140);
+
+                    // Instantly set position to incoming direction without visual jump
+                    card.style.transition = 'none';
+                    card.style.transform = `translate3d(0, ${enterY}px, 0) scale(0.96)`;
+                    card.style.opacity = '0.35';
+                    
+                    // Force reflow
+                    void card.offsetHeight;
+
+                    // 2nd Step: Smooth slide in new photo like Reels / Shorts feed
+                    requestAnimationFrame(() => {
+                        card.style.transition = 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1)';
+                        card.style.transform = 'translate3d(0, 0, 0) scale(1)';
+                        card.style.opacity = '1';
+
+                        setTimeout(() => {
+                            this.isAnimating = false;
+                        }, 250);
+                    });
+                }, 180);
             },
 
             bindEvents() {
@@ -1074,7 +1106,7 @@
                     if (['Space', 'ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp'].includes(e.code) || e.key === ' ') {
                         e.preventDefault();
                         if (this.currentPhoto && !this.isCameraActive && !this.isStagingSnap) {
-                            this.triggerNextCardAnimation();
+                            this.triggerNextCardAnimation('up');
                         }
                     }
                 });
@@ -1137,23 +1169,55 @@
                     e.target.value = '';
                 };
 
-                // Touch Gesture on Card Viewport
                 cardViewport.addEventListener('touchstart', (e) => {
+                    if (this.isCameraActive || this.isStagingSnap || this.isAnimating) return;
                     this.touchStartX = e.touches[0].clientX;
                     this.touchStartY = e.touches[0].clientY;
+                    this.touchMoveY = 0;
+                    this.isDraggingCard = true;
+                }, { passive: true });
+
+                cardViewport.addEventListener('touchmove', (e) => {
+                    if (!this.isDraggingCard || this.isCameraActive || this.isStagingSnap || this.isAnimating) return;
+                    const currentY = e.touches[0].clientY;
+                    const diffY = currentY - this.touchStartY;
+                    this.touchMoveY = diffY;
+
+                    // Real-time smooth finger tracking like Reels
+                    const card = document.getElementById('flashcard');
+                    if (card && Math.abs(diffY) > 5) {
+                        card.style.transition = 'none';
+                        const scale = Math.max(0.93, 1 - Math.abs(diffY) / 1000);
+                        const opacity = Math.max(0.4, 1 - Math.abs(diffY) / 600);
+                        card.style.transform = `translate3d(0, ${diffY * 0.65}px, 0) scale(${scale})`;
+                        card.style.opacity = opacity.toFixed(2);
+                    }
                 }, { passive: true });
 
                 cardViewport.addEventListener('touchend', (e) => {
-                    if (this.isCameraActive || this.isStagingSnap) return;
+                    if (!this.isDraggingCard) return;
+                    this.isDraggingCard = false;
+                    if (this.isCameraActive || this.isStagingSnap || this.isAnimating) return;
 
                     const touchEndX = e.changedTouches[0].clientX;
                     const touchEndY = e.changedTouches[0].clientY;
 
                     const diffX = touchEndX - this.touchStartX;
                     const diffY = touchEndY - this.touchStartY;
+                    const card = document.getElementById('flashcard');
 
-                    // Swipe left / right for type filter
-                    if (Math.abs(diffX) > 45 && Math.abs(diffX) > Math.abs(diffY)) {
+                    // 1. Swipe Up / Down (Reels / TikTok style photo slide)
+                    if (Math.abs(diffY) > 40 && Math.abs(diffY) > Math.abs(diffX)) {
+                        const direction = diffY < 0 ? 'up' : 'down';
+                        this.triggerNextCardAnimation(direction);
+                    } 
+                    // 2. Horizontal Swipe for Type Filter (Concept / All / Problem)
+                    else if (Math.abs(diffX) > 45 && Math.abs(diffX) > Math.abs(diffY)) {
+                        if (card) {
+                            card.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
+                            card.style.transform = 'translate3d(0, 0, 0) scale(1)';
+                            card.style.opacity = '1';
+                        }
                         if (diffX < 0) {
                             if (this.activeTypeFilter === 'concept') this.setTypeFilter('all');
                             else if (this.activeTypeFilter === 'all') this.setTypeFilter('problem');
@@ -1162,31 +1226,34 @@
                             else if (this.activeTypeFilter === 'all') this.setTypeFilter('concept');
                         }
                     } 
-                    // Swipe up / down for next snap
-                    else if (Math.abs(diffY) > 45 && Math.abs(diffY) > Math.abs(diffX)) {
-                        if (this.currentPhoto) this.triggerNextCardAnimation();
-                    } 
-                    // Tap handling
-                    else if (Math.abs(diffX) < 10 && Math.abs(diffY) < 10) {
-                        this.lastTapTime = Date.now();
-                        if (e.target.closest('button')) return;
-                        if (e.target.id === 'card-image') {
-                            this.openFullscreenPhoto();
-                        } else if (this.currentPhoto) {
-                            this.triggerNextCardAnimation();
+                    // 3. Tap / Click Handlers
+                    else {
+                        if (card) {
+                            card.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
+                            card.style.transform = 'translate3d(0, 0, 0) scale(1)';
+                            card.style.opacity = '1';
+                        }
+                        if (Math.abs(diffX) < 10 && Math.abs(diffY) < 10) {
+                            this.lastTapTime = Date.now();
+                            if (e.target.closest('button')) return;
+                            if (e.target.id === 'card-image') {
+                                this.openFullscreenPhoto();
+                            } else if (this.currentPhoto) {
+                                this.triggerNextCardAnimation('up');
+                            }
                         }
                     }
                 });
 
                 cardViewport.onclick = (e) => {
-                    if (this.isCameraActive || this.isStagingSnap) return;
+                    if (this.isCameraActive || this.isStagingSnap || this.isAnimating) return;
                     if (e.target.closest('button')) return;
                     if (Date.now() - this.lastTapTime < 300) return;
 
                     if (e.target.id === 'card-image') {
                         this.openFullscreenPhoto();
                     } else if (this.currentPhoto) {
-                        this.triggerNextCardAnimation();
+                        this.triggerNextCardAnimation('up');
                     }
                 };
 
