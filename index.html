@@ -232,10 +232,9 @@
 
         <!-- 우측 모드 전환 버튼 및 과목 관리 버튼 -->
         <div class="flex items-center gap-2 shrink-0">
-            <!-- 랜덤/순서대로 모드 전환 버튼 -->
-            <button id="btn-toggle-mode" class="h-8 px-2.5 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 flex items-center gap-1.5 transition shrink-0 text-xs font-medium text-white/90" title="재생 모드 전환">
-                <i id="mode-icon" class="fa-solid fa-shuffle text-[11px] text-iosYellow"></i>
-                <span id="mode-text">랜덤</span>
+            <!-- 랜덤/순서대로 모드 전환 버튼 (텍스트 제거, 아이콘만 유지) -->
+            <button id="btn-toggle-mode" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 flex items-center justify-center transition shrink-0" title="재생 모드 전환">
+                <i id="mode-icon" class="fa-solid fa-shuffle text-xs text-iosYellow"></i>
             </button>
             <button id="btn-manage-subjects" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 flex items-center justify-center transition shrink-0" title="과목 관리">
                 <i class="fa-solid fa-sliders text-xs text-white/80"></i>
@@ -649,12 +648,10 @@
             togglePlayMode() {
                 if (this.playMode === 'random') {
                     this.playMode = 'sequential';
-                    document.getElementById('mode-icon').className = 'fa-solid fa-arrow-down-1-9 text-[11px] text-iosYellow';
-                    document.getElementById('mode-text').innerText = '';
+                    document.getElementById('mode-icon').className = 'fa-solid fa-arrow-down-1-9 text-xs text-iosYellow';
                 } else {
                     this.playMode = 'random';
-                    document.getElementById('mode-icon').className = 'fa-solid fa-shuffle text-[11px] text-iosYellow';
-                    document.getElementById('mode-text').innerText = '';
+                    document.getElementById('mode-icon').className = 'fa-solid fa-shuffle text-xs text-iosYellow';
                 }
                 this.sequentialIndex = 0;
                 this.selectNextPhoto();
