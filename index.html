@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>snap</title></title>
+    <title>snap</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
@@ -230,8 +230,13 @@
             <span id="header-photo-count" class="text-xs font-semibold tracking-tight">0개 스냅</span>
         </div>
 
-        <!-- 우측 과목 관리 버튼 -->
+        <!-- 우측 모드 전환 버튼 및 과목 관리 버튼 -->
         <div class="flex items-center gap-2 shrink-0">
+            <!-- 랜덤/순서대로 모드 전환 버튼 -->
+            <button id="btn-toggle-mode" class="h-8 px-2.5 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 flex items-center gap-1.5 transition shrink-0 text-xs font-medium text-white/90" title="재생 모드 전환">
+                <i id="mode-icon" class="fa-solid fa-shuffle text-[11px] text-iosYellow"></i>
+                <span id="mode-text">랜덤</span>
+            </button>
             <button id="btn-manage-subjects" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 flex items-center justify-center transition shrink-0" title="과목 관리">
                 <i class="fa-solid fa-sliders text-xs text-white/80"></i>
             </button>
@@ -556,6 +561,8 @@
             
             currentSubjectId: 'all',
             activeTypeFilter: 'all', // 'all', 'concept', 'problem'
+            playMode: 'random', // 'random' 또는 'sequential' (순서대로: 오래된순)
+            sequentialIndex: 0, // 순서대로 모드일 때 현재 인덱스
 
             currentPhoto: null,
             lastPhotoId: null,
@@ -625,11 +632,32 @@
             },
 
             getFilteredPhotos() {
-                return this.photos.filter(photo => {
+                const filtered = this.photos.filter(photo => {
                     const matchesSubject = (this.currentSubjectId === 'all') || (photo.subjectId === this.currentSubjectId);
                     const matchesType = (this.activeTypeFilter === 'all') || (photo.type === this.activeTypeFilter);
                     return matchesSubject && matchesType;
                 });
+
+                // 순서대로 모드일 경우 생성일 기준 오름차순(오래된 순) 정렬
+                if (this.playMode === 'sequential') {
+                    filtered.sort((a, b) => a.createdAt - b.createdAt);
+                }
+
+                return filtered;
+            },
+
+            togglePlayMode() {
+                if (this.playMode === 'random') {
+                    this.playMode = 'sequential';
+                    document.getElementById('mode-icon').className = 'fa-solid fa-arrow-down-1-9 text-[11px] text-iosYellow';
+                    document.getElementById('mode-text').innerText = '';
+                } else {
+                    this.playMode = 'random';
+                    document.getElementById('mode-icon').className = 'fa-solid fa-shuffle text-[11px] text-iosYellow';
+                    document.getElementById('mode-text').innerText = '';
+                }
+                this.sequentialIndex = 0;
+                this.selectNextPhoto();
             },
 
             selectNextPhoto() {
@@ -643,6 +671,19 @@
                     return;
                 }
 
+                if (this.playMode === 'sequential') {
+                    if (this.sequentialIndex >= candidatePhotos.length) {
+                        this.sequentialIndex = 0;
+                    }
+                    this.currentPhoto = candidatePhotos[this.sequentialIndex];
+                    this.sequentialIndex = (this.sequentialIndex + 1) % candidatePhotos.length;
+                    this.lastPhotoId = this.currentPhoto.id;
+                    this.db.updatePhotoLastShown(this.currentPhoto.id);
+                    this.renderCard();
+                    return;
+                }
+
+                // Random mode
                 if (candidatePhotos.length === 1) {
                     this.currentPhoto = candidatePhotos[0];
                     this.lastPhotoId = this.currentPhoto.id;
@@ -683,6 +724,7 @@
                 }
 
                 this.activeTypeFilter = type;
+                this.sequentialIndex = 0;
                 this.updateTypeFilterUI(type);
                 this.selectNextPhoto();
             },
@@ -733,6 +775,7 @@
                             this.renderSubjectModeBar();
                         } else {
                             this.currentSubjectId = subj.id;
+                            this.sequentialIndex = 0;
                             this.renderSubjectModeBar();
                             this.selectNextPhoto();
                         }
@@ -785,6 +828,7 @@
                                     if (targetId !== this.currentSubjectId) {
                                         if (this.isCameraActive) this.stopLiveCamera();
                                         this.currentSubjectId = targetId;
+                                        this.sequentialIndex = 0;
                                         items.forEach(el => el.classList.remove('active'));
                                         closestItem.classList.add('active');
                                         this.selectNextPhoto();
@@ -1106,6 +1150,12 @@
 
             bindEvents() {
                 const cardViewport = document.getElementById('card-viewport');
+
+                // 모드 전환 버튼 이벤트 연결
+                document.getElementById('btn-toggle-mode').onclick = () => {
+                    if (this.isCameraActive || this.isStagingSnap) return;
+                    this.togglePlayMode();
+                };
 
                 // 키보드 단축키 지원 (스페이스바 / 화살표 키 누를 때 스냅 넘기기)
                 window.addEventListener('keydown', (e) => {
