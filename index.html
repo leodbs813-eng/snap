@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>snap</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        iosYellow: '#FFD60A',
+                        iosDark: '#000000',
+                        iosCardDark: '#121212',
+                        iosGray: '#1C1C1E',
+                    },
+                    fontFamily: {
+                        sans: ['Pretendard', 'Noto Sans KR', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Pretendard", "Noto Sans KR", sans-serif;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+            background-color: #000000;
+            color: #f1f5f9;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .card-transition {
+            transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.18s ease;
+        }
+
+        /* Strictly horizontal scrolling for subject slider */
+        .camera-mode-container {
+            display: flex;
+            align-items: center;
+            overflow-x: auto;
+            overflow-y: hidden;
+            touch-action: pan-x;
+            scroll-snap-type: x mandatory;
+            scroll-behavior: smooth;
+            padding-left: calc(50% - 40px);
+            padding-right: calc(50% - 40px);
+            mask-image: linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%);
+            will-change: scroll-position;
+        }
+        .camera-mode-item {
+            flex: 0 0 auto;
+            scroll-snap-align: center;
+            font-size: 0.82rem;
+            letter-spacing: 0.03em;
+            transition: color 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
+            color: rgba(255, 255, 255, 0.4);
+            font-weight: 500;
+            padding: 0.35rem 0.75rem;
+            cursor: pointer;
+            white-space: nowrap;
+            transform: scale(0.92);
+            opacity: 0.5;
+        }
+        .camera-mode-item.active {
+            color: #FFD60A !important;
+            font-weight: 700 !important;
+            transform: scale(1.1);
+            opacity: 1;
+        }
+
+        /* Glassmorphism Header & Footer */
+        .app-header, .app-footer {
+            background-color: rgba(0, 0, 0, 0.85);
+            border-color: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .app-card-bg {
+            background-color: #0d0d0d;
+            border-color: rgba(255, 255, 255, 0.12);
+            color: #f1f5f9;
+        }
+        .app-modal-bg {
+            background-color: #121212;
+            border-color: #27272a;
+            color: #f1f5f9;
+        }
+        .app-input-bg {
+            background-color: #000000;
+            border-color: #27272a;
+            color: #f1f5f9;
+        }
+        .app-btn-primary {
+            background-color: #ffffff;
+            color: #000000;
+        }
+
+        /* iOS Camera Shutter / Action Button */
+        .shutter-outer {
+            width: 4.2rem;
+            height: 4.2rem;
+            border-radius: 9999px;
+            border: 3.5px solid #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 3px;
+            transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+            position: relative;
+        }
+        .shutter-inner {
+            width: 100%;
+            height: 100%;
+            background-color: #ffffff;
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+            color: #000000;
+        }
+        .shutter-outer:active {
+            transform: scale(0.92);
+        }
+        .shutter-outer:active .shutter-inner {
+            transform: scale(0.88);
+            background-color: #e5e5ea;
+        }
+        
+        /* Live Camera Mode */
+        .shutter-outer.recording {
+            border-color: #FFD60A;
+        }
+        .shutter-outer.recording .shutter-inner {
+            background-color: #FFD60A;
+            border-radius: 9999px;
+            transform: scale(0.75);
+        }
+
+        /* Staging Mode (Save Snap Checkmark Button) */
+        .shutter-outer.staging-mode {
+            border-color: #FFD60A;
+            background-color: #FFD60A;
+        }
+        .shutter-outer.staging-mode .shutter-inner {
+            background-color: #FFD60A;
+            color: #000000;
+            font-size: 1.25rem;
+            font-weight: 800;
+        }
+
+        /* Type Filter Pills */
+        .camera-zoom-pill {
+            padding: 0.35rem 0.85rem;
+            border-radius: 9999px;
+            background-color: rgba(0, 0, 0, 0.45);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.72rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            cursor: pointer;
+        }
+        .camera-zoom-pill.active {
+            color: #FFD60A;
+            background-color: rgba(0, 0, 0, 0.85);
+            border-color: #FFD60A;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body class="min-h-screen font-sans flex flex-col justify-between overflow-hidden antialiased select-none bg-black text-white">
+
+    <!-- TOP BAR: Minimalist Header -->
+    <header class="app-header w-full pt-safe pt-3 px-6 pb-2 z-20 flex items-center justify-between shrink-0 border-b border-white/10">
+        <!-- 스냅 개수 정보 -->
+        <div class="flex items-center gap-1.5 opacity-80">
+            <i class="fa-solid fa-bolt text-[11px] text-iosYellow"></i>
+            <span id="header-photo-count" class="text-xs font-semibold tracking-tight">0개 스냅</span>
+        </div>
+
+        <!-- 우측 과목 관리 버튼 -->
+        <div class="flex items-center gap-2 shrink-0">
+            <button id="btn-manage-subjects" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 flex items-center justify-center transition shrink-0" title="과목 관리">
+                <i class="fa-solid fa-sliders text-xs text-white/80"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN REVIEW & CAMERA VIEWPORT CONTAINER -->
+    <main class="flex-1 relative w-full flex flex-col items-center justify-center p-3 sm:p-4 overflow-hidden">
+        
+        <div id="card-viewport" class="relative w-full max-w-md h-[calc(100vh-220px)] flex items-center justify-center cursor-pointer rounded-3xl overflow-hidden app-card-bg border border-white/10 shadow-2xl">
+            
+            <!-- 카드 본체 -->
+            <div id="flashcard" class="w-full h-full flex flex-col items-center justify-center relative p-2 card-transition">
+                
+                <!-- 1. 스냅 이미지 -->
+                <img id="card-image" class="w-full h-full object-contain rounded-2xl select-none hidden" alt="스냅" />
+
+                <!-- 2. 실시간 라이브 카메라 비디오 피드 -->
+                <video id="camera-feed" autoplay playsinline class="w-full h-full object-cover rounded-2xl hidden"></video>
+
+                <!-- 카메라 전용 오버레이 안내 뱃지 -->
+                <div id="camera-active-badge" class="absolute top-4 left-4 bg-black/70 border border-iosYellow/40 text-[11px] text-iosYellow px-3 py-1.5 rounded-full flex items-center gap-2 hidden backdrop-blur-md shadow-md z-30">
+                    <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                    <span class="font-bold">카메라 촬영 중</span>
+                </div>
+
+                <!-- 새 스냅 설정 오버레이 안내 뱃지 -->
+                <div id="staging-active-badge" class="absolute top-4 left-4 bg-iosYellow/20 border border-iosYellow/60 text-[11px] text-iosYellow px-3 py-1.5 rounded-full flex items-center gap-2 hidden backdrop-blur-md shadow-md z-30">
+                    <i class="fa-solid fa-wand-magic-sparkles text-xs"></i>
+                    <span class="font-bold">새 스냅 설정</span>
+                </div>
+
+                <!-- 카드 정보 뱃지 (과목 & 유형) -->
+                <div id="card-info-badge" class="absolute top-4 left-4 bg-black/60 border border-white/15 text-[11px] text-white px-3 py-1.5 rounded-full flex items-center gap-2 hidden backdrop-blur-md shadow-md z-20">
+                    <span id="card-subject-name" class="font-bold text-iosYellow">과목</span>
+                    <span class="opacity-30">|</span>
+                    <span id="card-type-name" class="font-medium">유형</span>
+                </div>
+
+                <!-- 중요도 표시 뱃지 -->
+                <div id="card-weight-badge" class="absolute top-4 right-4 bg-black/60 border border-white/15 text-[11px] text-white px-3 py-1.5 rounded-full flex items-center gap-1.5 hidden backdrop-blur-md shadow-md z-20">
+                    <span class="opacity-60 text-[10px]">중요도</span>
+                    <strong id="card-weight-val" class="font-bold text-iosYellow">2</strong>
+                </div>
+
+                <!-- Empty State (스냅 없음 안내) -->
+                <div id="empty-state" class="flex flex-col items-center justify-center p-6 text-center z-20">
+                    <div class="w-16 h-16 bg-white/5 border border-white/10 rounded-full flex items-center justify-center mb-3 text-2xl opacity-60 text-iosYellow shadow-inner">
+                        <i class="fa-solid fa-camera"></i>
+                    </div>
+                    <h3 id="empty-title" class="text-xs font-medium opacity-60">등록된 스냅이 없습니다</h3>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Hidden Canvas & File Input -->
+    <canvas id="snapshot-canvas" class="hidden"></canvas>
+    <input type="file" id="direct-file-input" accept="image/*" class="hidden">
+
+    <!-- BOTTOM CONTROLS: UNIFIED APPLE CAMERA CONTROL BAR -->
+    <footer class="app-footer w-full pb-safe pb-4 pt-2 px-4 z-20 shrink-0 flex flex-col items-center gap-3 border-t border-white/10">
+        
+        <!-- 1. 유형 선택 필터: [ 개념 ] [ 전체 ] [ 문제 ] -->
+        <div class="flex items-center justify-center gap-2.5">
+            <button id="type-filter-concept" class="camera-zoom-pill">
+                개념
+            </button>
+            <button id="type-filter-all" class="camera-zoom-pill active">
+                전체
+            </button>
+            <button id="type-filter-problem" class="camera-zoom-pill">
+                문제
+            </button>
+        </div>
+
+        <!-- 2. 통일된 5개 버튼 하단 조작 바 (모드 변경 시에도 레이아웃 유지) -->
+        <div id="unified-action-bar" class="w-full max-w-md grid grid-cols-5 items-center justify-items-center gap-1 pt-1">
+            
+            <!-- 1st: 앨범 선택 버튼 -->
+            <button id="btn-album-preview" class="w-11 h-11 rounded-2xl border border-white/20 bg-zinc-900 overflow-hidden flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition relative" title="앨범에서 가져오기">
+                <img id="album-thumb-img" class="w-full h-full object-cover hidden" alt="앨범" />
+                <i id="album-thumb-icon" class="fa-regular fa-images text-white/70 text-xs"></i>
+            </button>
+
+            <!-- 2nd: 중요도 낮추기 (-1) -->
+            <button id="btn-weight-down" disabled class="flex flex-col items-center justify-center w-10 h-10 rounded-full bg-white/10 border border-white/10 hover:bg-white/20 text-amber-400 disabled:opacity-20 disabled:pointer-events-none transition active:scale-95" title="중요도 -">
+                <i class="fa-solid fa-minus text-xs font-bold"></i>
+            </button>
+
+            <!-- 3rd: 중앙 메인 버튼 (촬영 / 촬영 중 캡처 / 스냅 저장) -->
+            <button id="btn-add-photo" class="shutter-outer transition cursor-pointer" title="스냅 촬영">
+                <div id="shutter-inner" class="shutter-inner">
+                    <i id="shutter-icon" class="fa-solid fa-check text-lg hidden"></i>
+                </div>
+            </button>
+
+            <!-- 4th: 중요도 높이기 (+1) -->
+            <button id="btn-weight-up" disabled class="flex flex-col items-center justify-center w-10 h-10 rounded-full bg-white/10 border border-white/10 hover:bg-white/20 text-emerald-400 disabled:opacity-20 disabled:pointer-events-none transition active:scale-95" title="중요도 +">
+                <i class="fa-solid fa-plus text-xs font-bold"></i>
+            </button>
+
+            <!-- 5th: 우측 끝 액션 버튼 (스냅 삭제 / 취소) -->
+            <button id="btn-action-right" disabled class="flex flex-col items-center justify-center w-10 h-10 rounded-full bg-white/10 border border-white/10 hover:bg-red-500/20 hover:border-red-500/40 text-white/80 hover:text-red-400 disabled:opacity-20 disabled:pointer-events-none transition active:scale-95" title="삭제 / 취소">
+                <i id="action-right-icon" class="fa-solid fa-trash-can text-xs"></i>
+            </button>
+
+        </div>
+
+        <!-- 3. 과목 모드 가로 슬라이더 -->
+        <div class="w-full max-w-xs relative flex items-center justify-center overflow-hidden py-1">
+            <div class="absolute -top-0.5 w-1 h-1 bg-iosYellow rounded-full z-30 pointer-events-none"></div>
+            <div class="w-full camera-mode-container no-scrollbar" id="subject-mode-container">
+                <!-- Dynamically populated subject items -->
+            </div>
+        </div>
+
+    </footer>
+
+    <!-- MODAL 1: 과목 관리 모달 -->
+    <div id="modal-manage-subjects" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden transition-opacity duration-200 opacity-0">
+        <div class="app-modal-bg border w-full max-w-sm rounded-t-3xl sm:rounded-3xl p-5 max-h-[85vh] flex flex-col shadow-2xl">
+            <div class="flex items-center justify-between pb-3 mb-3 border-b border-white/10">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-white/90">과목 관리</h2>
+                <button id="modal-subjects-close" class="opacity-50 hover:opacity-100 p-1 text-white">
+                    <i class="fa-solid fa-xmark text-base"></i>
+                </button>
+            </div>
+
+            <div class="flex gap-2 mb-3">
+                <input type="text" id="input-new-subject" placeholder="새 과목 이름" class="flex-1 app-input-bg border border-white/10 rounded-xl px-3 py-2 text-xs focus:outline-none" maxlength="15">
+                <button id="btn-create-subject" class="app-btn-primary font-bold text-xs px-3 py-2 rounded-xl shrink-0">
+                    추가
+                </button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto space-y-1.5 pr-1 no-scrollbar my-1" id="subject-list-manage">
+                <!-- Dynamic subject list -->
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: Confirm Modal -->
+    <div id="modal-confirm" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-200">
+        <div class="app-modal-bg border border-white/10 w-full max-w-xs rounded-3xl p-5 shadow-2xl text-center">
+            <h3 id="confirm-title" class="text-xs font-bold uppercase tracking-wider mb-2 text-white/90">스냅 삭제</h3>
+            <p id="confirm-message" class="text-xs opacity-70 leading-relaxed mb-5">이 스냅을 정말 삭제하시겠습니까?</p>
+            <div class="flex justify-center gap-2" id="confirm-actions">
+                <button id="confirm-cancel-btn" class="flex-1 py-2.5 bg-white/10 border border-white/10 text-xs font-semibold rounded-xl text-white/80">취소</button>
+                <button id="confirm-ok-btn" class="flex-1 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-semibold rounded-xl">삭제</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: Fullscreen Snap Viewer -->
+    <div id="modal-fullscreen-photo" class="fixed inset-0 bg-black z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200 cursor-pointer select-none">
+        <button id="fullscreen-close-btn" class="absolute top-4 right-4 z-10 w-10 h-10 bg-black/60 hover:bg-black/80 text-white rounded-full flex items-center justify-center border border-white/20 backdrop-blur-md">
+            <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+        <img id="fullscreen-image" class="max-w-full max-h-full object-contain select-none" alt="전체화면 스냅" />
+    </div>
+
+    <script>
+        /**
+         * IndexedDB storage wrapper for subjects and snaps
+         */
+        class FlashcardDB {
+            constructor() {
+                this.dbName = 'MemoRE_PhotoReview_DB';
+                this.dbVersion = 1;
+                this.db = null;
+            }
+
+            async init() {
+                return new Promise((resolve, reject) => {
+                    const request = indexedDB.open(this.dbName, this.dbVersion);
+
+                    request.onupgradeneeded = (event) => {
+                        const db = event.target.result;
+                        if (!db.objectStoreNames.contains('subjects')) {
+                            const subjectStore = db.createObjectStore('subjects', { keyPath: 'id' });
+                            subjectStore.createIndex('name', 'name', { unique: false });
+                        }
+                        if (!db.objectStoreNames.contains('photos')) {
+                            const photoStore = db.createObjectStore('photos', { keyPath: 'id' });
+                            photoStore.createIndex('subjectId', 'subjectId', { unique: false });
+                            photoStore.createIndex('type', 'type', { unique: false });
+                        }
+                    };
+
+                    request.onsuccess = (event) => {
+                        this.db = event.target.result;
+                        resolve(this.db);
+                    };
+
+                    request.onerror = (event) => {
+                        console.error('IndexedDB error:', event.target.error);
+                        reject(event.target.error);
+                    };
+                });
+            }
+
+            async getAllSubjects() {
+                return new Promise((resolve) => {
+                    if (!this.db) return resolve([]);
+                    const tx = this.db.transaction('subjects', 'readonly');
+                    const store = tx.objectStore('subjects');
+                    const req = store.getAll();
+                    req.onsuccess = () => resolve(req.result || []);
+                    req.onerror = () => resolve([]);
+                });
+            }
+
+            async addSubject(name) {
+                return new Promise((resolve) => {
+                    const tx = this.db.transaction('subjects', 'readwrite');
+                    const store = tx.objectStore('subjects');
+                    const newSubject = { id: 'subj_' + Date.now(), name: name };
+                    const req = store.add(newSubject);
+                    req.onsuccess = () => resolve(newSubject);
+                });
+            }
+
+            async deleteSubject(id) {
+                return new Promise((resolve) => {
+                    const tx = this.db.transaction('subjects', 'readwrite');
+                    const store = tx.objectStore('subjects');
+                    const req = store.delete(id);
+                    req.onsuccess = () => resolve(true);
+                });
+            }
+
+            async getAllPhotos() {
+                return new Promise((resolve) => {
+                    if (!this.db) return resolve([]);
+                    const tx = this.db.transaction('photos', 'readonly');
+                    const store = tx.objectStore('photos');
+                    const req = store.getAll();
+                    req.onsuccess = () => resolve(req.result || []);
+                    req.onerror = () => resolve([]);
+                });
+            }
+
+            async addPhoto(imageData, subjectId, type = 'concept') {
+                return new Promise((resolve) => {
+                    const tx = this.db.transaction('photos', 'readwrite');
+                    const store = tx.objectStore('photos');
+                    const newPhoto = {
+                        id: 'photo_' + Date.now() + '_' + Math.random().toString(36).substring(2, 5),
+                        imageData: imageData,
+                        subjectId: subjectId,
+                        type: type,
+                        weight: 2,
+                        createdAt: Date.now(),
+                        lastShown: Date.now()
+                    };
+                    const req = store.add(newPhoto);
+                    req.onsuccess = () => resolve(newPhoto);
+                });
+            }
+
+            async deletePhoto(id) {
+                return new Promise((resolve) => {
+                    const tx = this.db.transaction('photos', 'readwrite');
+                    const store = tx.objectStore('photos');
+                    const req = store.delete(id);
+                    req.onsuccess = () => resolve(true);
+                });
+            }
+
+            async deletePhotosBySubject(subjectId) {
+                const photos = await this.getAllPhotos();
+                const tx = this.db.transaction('photos', 'readwrite');
+                const store = tx.objectStore('photos');
+                photos.forEach(p => {
+                    if (p.subjectId === subjectId) {
+                        store.delete(p.id);
+                    }
+                });
+                return new Promise((resolve) => {
+                    tx.oncomplete = () => resolve(true);
+                });
+            }
+
+            async updatePhotoWeight(id, weight) {
+                return new Promise((resolve) => {
+                    const tx = this.db.transaction('photos', 'readwrite');
+                    const store = tx.objectStore('photos');
+                    const getReq = store.get(id);
+                    getReq.onsuccess = () => {
+                        const item = getReq.result;
+                        if (item) {
+                            item.weight = weight;
+                            store.put(item);
+                        }
+                        resolve(true);
+                    };
+                });
+            }
+
+            async updatePhotoLastShown(id) {
+                return new Promise((resolve) => {
+                    const tx = this.db.transaction('photos', 'readwrite');
+                    const store = tx.objectStore('photos');
+                    const getReq = store.get(id);
+                    getReq.onsuccess = () => {
+                        const item = getReq.result;
+                        if (item) {
+                            item.lastShown = Date.now();
+                            store.put(item);
+                        }
+                        resolve(true);
+                    };
+                });
+            }
+        }
+
+        const App = {
+            db: null,
+            subjects: [],
+            photos: [],
+            
+            currentSubjectId: 'all',
+            activeTypeFilter: 'all', // 'all', 'concept', 'problem'
+
+            currentPhoto: null,
+            lastPhotoId: null,
+
+            // Live Camera & Staging states
+            isCameraActive: false,
+            isStagingSnap: false,
+            stagedImageBase64: null,
+            stagedSubjectId: null,
+            stagedType: 'concept',
+
+            mediaStream: null,
+            isSliderScrolling: false,
+
+            touchStartX: 0,
+            touchStartY: 0,
+            lastTapTime: 0,
+
+            async init() {
+                this.db = new FlashcardDB();
+                await this.db.init();
+                
+                this.bindEvents();
+                await this.reloadData();
+                this.selectNextPhoto();
+            },
+
+            async reloadData() {
+                this.subjects = await this.db.getAllSubjects();
+                this.photos = await this.db.getAllPhotos();
+                
+                const countSpan = document.getElementById('header-photo-count');
+                if (countSpan) countSpan.innerText = `${this.photos.length}개 스냅`;
+
+                this.renderSubjectModeBar();
+                this.updateAlbumThumbnail();
+            },
+
+            updateAlbumThumbnail() {
+                const thumbImg = document.getElementById('album-thumb-img');
+                const thumbIcon = document.getElementById('album-thumb-icon');
+
+                if (this.photos.length > 0) {
+                    const lastPhoto = this.photos[this.photos.length - 1];
+                    thumbImg.src = lastPhoto.imageData;
+                    thumbImg.classList.remove('hidden');
+                    thumbIcon.classList.add('hidden');
+                } else {
+                    thumbImg.classList.add('hidden');
+                    thumbIcon.classList.remove('hidden');
+                }
+            },
+
+            getFilteredPhotos() {
+                return this.photos.filter(photo => {
+                    const matchesSubject = (this.currentSubjectId === 'all') || (photo.subjectId === this.currentSubjectId);
+                    const matchesType = (this.activeTypeFilter === 'all') || (photo.type === this.activeTypeFilter);
+                    return matchesSubject && matchesType;
+                });
+            },
+
+            selectNextPhoto() {
+                if (this.isCameraActive || this.isStagingSnap) return;
+
+                const candidatePhotos = this.getFilteredPhotos();
+
+                if (candidatePhotos.length === 0) {
+                    this.currentPhoto = null;
+                    this.renderCard();
+                    return;
+                }
+
+                if (candidatePhotos.length === 1) {
+                    this.currentPhoto = candidatePhotos[0];
+                    this.lastPhotoId = this.currentPhoto.id;
+                    this.renderCard();
+                    return;
+                }
+
+                let pool = candidatePhotos.filter(p => p.id !== this.lastPhotoId);
+                if (pool.length === 0) pool = candidatePhotos;
+
+                const totalWeight = pool.reduce((sum, p) => sum + (p.weight || 2), 0);
+                let randomVal = Math.random() * totalWeight;
+
+                let selected = pool[0];
+                for (const photo of pool) {
+                    const w = photo.weight || 2;
+                    if (randomVal < w) {
+                        selected = photo;
+                        break;
+                    }
+                    randomVal -= w;
+                }
+
+                this.currentPhoto = selected;
+                this.lastPhotoId = selected.id;
+                this.db.updatePhotoLastShown(selected.id);
+                this.renderCard();
+            },
+
+            setTypeFilter(type) {
+                if (this.isCameraActive) this.stopLiveCamera();
+
+                if (this.isStagingSnap) {
+                    if (type === 'all') type = 'concept';
+                    this.stagedType = type;
+                    this.updateTypeFilterUI(type);
+                    return;
+                }
+
+                this.activeTypeFilter = type;
+                this.updateTypeFilterUI(type);
+                this.selectNextPhoto();
+            },
+
+            updateTypeFilterUI(type) {
+                const btnConcept = document.getElementById('type-filter-concept');
+                const btnAll = document.getElementById('type-filter-all');
+                const btnProblem = document.getElementById('type-filter-problem');
+
+                [btnConcept, btnAll, btnProblem].forEach(b => b.classList.remove('active'));
+
+                if (type === 'concept') btnConcept.classList.add('active');
+                else if (type === 'all') btnAll.classList.add('active');
+                else if (type === 'problem') btnProblem.classList.add('active');
+            },
+
+            renderSubjectModeBar() {
+                const container = document.getElementById('subject-mode-container');
+                container.innerHTML = '';
+
+                let subjectList = [];
+                if (this.isStagingSnap) {
+                    subjectList = [...this.subjects];
+                } else {
+                    subjectList = [{ id: 'all', name: '전체' }, ...this.subjects];
+                }
+
+                if (subjectList.length === 0 && this.isStagingSnap) {
+                    container.innerHTML = '<div class="text-[11px] opacity-60 text-iosYellow font-medium px-2 py-1">과목을 먼저 추가해 주세요</div>';
+                    return;
+                }
+
+                const activeTargetId = this.isStagingSnap ? this.stagedSubjectId : this.currentSubjectId;
+
+                subjectList.forEach(subj => {
+                    const isSelected = activeTargetId === subj.id;
+                    const item = document.createElement('div');
+                    item.className = `camera-mode-item ${isSelected ? 'active' : ''}`;
+                    item.innerText = subj.name;
+                    item.setAttribute('data-id', subj.id);
+
+                    item.onclick = (e) => {
+                        e.stopPropagation();
+                        if (this.isCameraActive) this.stopLiveCamera();
+
+                        if (this.isStagingSnap) {
+                            this.stagedSubjectId = subj.id;
+                            this.renderSubjectModeBar();
+                        } else {
+                            this.currentSubjectId = subj.id;
+                            this.renderSubjectModeBar();
+                            this.selectNextPhoto();
+                        }
+
+                        item.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                    };
+
+                    container.appendChild(item);
+
+                    if (isSelected) {
+                        setTimeout(() => {
+                            item.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' });
+                        }, 20);
+                    }
+                });
+
+                // Fast scroll calculation using requestAnimationFrame (snappy & immediate response)
+                container.onscroll = () => {
+                    if (this.isSliderScrolling) return;
+                    this.isSliderScrolling = true;
+
+                    window.requestAnimationFrame(() => {
+                        const containerRect = container.getBoundingClientRect();
+                        const centerX = containerRect.left + containerRect.width / 2;
+                        
+                        const items = container.querySelectorAll('.camera-mode-item');
+                        let closestItem = null;
+                        let minDistance = Infinity;
+
+                        items.forEach(el => {
+                            const rect = el.getBoundingClientRect();
+                            const itemCenterX = rect.left + rect.width / 2;
+                            const distance = Math.abs(centerX - itemCenterX);
+                            if (distance < minDistance) {
+                                minDistance = distance;
+                                closestItem = el;
+                            }
+                        });
+
+                        if (closestItem) {
+                            const targetId = closestItem.getAttribute('data-id');
+                            if (targetId) {
+                                if (this.isStagingSnap) {
+                                    if (targetId !== this.stagedSubjectId) {
+                                        this.stagedSubjectId = targetId;
+                                        items.forEach(el => el.classList.remove('active'));
+                                        closestItem.classList.add('active');
+                                    }
+                                } else {
+                                    if (targetId !== this.currentSubjectId) {
+                                        if (this.isCameraActive) this.stopLiveCamera();
+                                        this.currentSubjectId = targetId;
+                                        items.forEach(el => el.classList.remove('active'));
+                                        closestItem.classList.add('active');
+                                        this.selectNextPhoto();
+                                    }
+                                }
+                            }
+                        }
+                        this.isSliderScrolling = false;
+                    });
+                };
+            },
+
+            renderCard() {
+                const imgEl = document.getElementById('card-image');
+                const videoEl = document.getElementById('camera-feed');
+                const emptyEl = document.getElementById('empty-state');
+                const infoBadge = document.getElementById('card-info-badge');
+                const weightBadge = document.getElementById('card-weight-badge');
+                const cameraBadge = document.getElementById('camera-active-badge');
+                const stagingBadge = document.getElementById('staging-active-badge');
+
+                const shutterOuter = document.getElementById('btn-add-photo');
+                const shutterIcon = document.getElementById('shutter-icon');
+                const btnRight = document.getElementById('btn-action-right');
+                const rightIcon = document.getElementById('action-right-icon');
+
+                const btnDown = document.getElementById('btn-weight-down');
+                const btnUp = document.getElementById('btn-weight-up');
+                const btnAlbum = document.getElementById('btn-album-preview');
+
+                // 1. Staging Mode (Shot taken, choosing subject/type directly on home view)
+                if (this.isStagingSnap) {
+                    videoEl.classList.add('hidden');
+                    cameraBadge.classList.add('hidden');
+                    emptyEl.classList.add('hidden');
+                    infoBadge.classList.add('hidden');
+                    weightBadge.classList.add('hidden');
+
+                    imgEl.src = this.stagedImageBase64;
+                    imgEl.classList.remove('hidden');
+                    stagingBadge.classList.remove('hidden');
+
+                    // Unified 5-button layout transformations
+                    shutterOuter.className = 'shutter-outer staging-mode transition cursor-pointer';
+                    shutterIcon.classList.remove('hidden');
+                    shutterOuter.title = '스냅 저장';
+
+                    rightIcon.className = 'fa-solid fa-xmark text-sm';
+                    btnRight.className = 'flex flex-col items-center justify-center w-10 h-10 rounded-full bg-white/10 border border-white/10 hover:bg-white/20 text-white transition active:scale-95';
+                    btnRight.disabled = false;
+                    btnRight.title = '취소';
+
+                    btnAlbum.classList.add('opacity-30', 'pointer-events-none');
+                    btnDown.disabled = true;
+                    btnUp.disabled = true;
+
+                    document.getElementById('type-filter-all').classList.add('hidden');
+                    return;
+                }
+
+                // Restore Review / Live camera normal layout
+                document.getElementById('type-filter-all').classList.remove('hidden');
+                stagingBadge.classList.add('hidden');
+                btnAlbum.classList.remove('opacity-30', 'pointer-events-none');
+
+                // 2. Camera Active Mode
+                if (this.isCameraActive) {
+                    imgEl.classList.add('hidden');
+                    emptyEl.classList.add('hidden');
+                    infoBadge.classList.add('hidden');
+                    weightBadge.classList.add('hidden');
+
+                    videoEl.classList.remove('hidden');
+                    cameraBadge.classList.remove('hidden');
+
+                    shutterOuter.className = 'shutter-outer recording transition cursor-pointer';
+                    shutterIcon.classList.add('hidden');
+                    shutterOuter.title = '스냅 촬영';
+
+                    rightIcon.className = 'fa-solid fa-xmark text-sm';
+                    btnRight.className = 'flex flex-col items-center justify-center w-10 h-10 rounded-full bg-white/10 border border-white/10 hover:bg-white/20 text-white transition active:scale-95';
+                    btnRight.disabled = false;
+                    btnRight.title = '카메라 취소';
+
+                    btnDown.disabled = true;
+                    btnUp.disabled = true;
+                    return;
+                }
+
+                // 3. Normal Review Mode
+                videoEl.classList.add('hidden');
+                cameraBadge.classList.add('hidden');
+
+                shutterOuter.className = 'shutter-outer transition cursor-pointer';
+                shutterIcon.classList.add('hidden');
+                shutterOuter.title = '스냅 촬영';
+
+                rightIcon.className = 'fa-solid fa-trash-can text-xs';
+                btnRight.title = '스냅 삭제';
+
+                if (!this.currentPhoto) {
+                    imgEl.classList.add('hidden');
+                    infoBadge.classList.add('hidden');
+                    weightBadge.classList.add('hidden');
+                    emptyEl.classList.remove('hidden');
+
+                    btnRight.disabled = true;
+                    btnDown.disabled = true;
+                    btnUp.disabled = true;
+
+                    if (this.photos.length === 0) {
+                        document.getElementById('empty-title').innerText = '등록된 스냅이 없습니다';
+                    } else {
+                        document.getElementById('empty-title').innerText = '해당 조건의 스냅이 없습니다';
+                    }
+                    return;
+                }
+
+                emptyEl.classList.add('hidden');
+                imgEl.src = this.currentPhoto.imageData;
+                imgEl.classList.remove('hidden');
+                infoBadge.classList.remove('hidden');
+                weightBadge.classList.remove('hidden');
+
+                btnRight.disabled = false;
+                btnRight.className = 'flex flex-col items-center justify-center w-10 h-10 rounded-full bg-white/10 border border-white/10 hover:bg-red-500/20 hover:border-red-500/40 text-white/80 hover:text-red-400 transition active:scale-95';
+                btnDown.disabled = false;
+                btnUp.disabled = false;
+
+                const subjObj = this.subjects.find(s => s.id === this.currentPhoto.subjectId);
+                document.getElementById('card-subject-name').innerText = subjObj ? subjObj.name : '과목';
+
+                const typeSpan = document.getElementById('card-type-name');
+                if (this.currentPhoto.type === 'concept') {
+                    typeSpan.innerText = '개념';
+                    typeSpan.className = 'font-semibold text-emerald-400';
+                } else {
+                    typeSpan.innerText = '문제';
+                    typeSpan.className = 'font-semibold text-amber-400';
+                }
+
+                document.getElementById('card-weight-val').innerText = this.currentPhoto.weight || 2;
+            },
+
+            async startLiveCamera() {
+                try {
+                    const constraints = {
+                        video: {
+                            facingMode: 'environment',
+                            width: { ideal: 1280 },
+                            height: { ideal: 720 }
+                        },
+                        audio: false
+                    };
+
+                    this.mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+                    const videoEl = document.getElementById('camera-feed');
+                    videoEl.srcObject = this.mediaStream;
+                    this.isCameraActive = true;
+
+                    this.renderCard();
+                } catch (err) {
+                    console.warn("Camera streaming unavailable, opening album file selector:", err);
+                    document.getElementById('direct-file-input').click();
+                }
+            },
+
+            stopLiveCamera() {
+                if (this.mediaStream) {
+                    this.mediaStream.getTracks().forEach(track => track.stop());
+                    this.mediaStream = null;
+                }
+                this.isCameraActive = false;
+                this.renderCard();
+            },
+
+            captureCameraSnapshot() {
+                const videoEl = document.getElementById('camera-feed');
+                if (!videoEl || !this.isCameraActive) return;
+
+                const canvas = document.getElementById('snapshot-canvas');
+                canvas.width = videoEl.videoWidth || 640;
+                canvas.height = videoEl.videoHeight || 480;
+
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+
+                const base64Data = canvas.toDataURL('image/jpeg', 0.88);
+                
+                this.stopLiveCamera();
+                this.enterStagingMode(base64Data);
+            },
+
+            enterStagingMode(base64Image) {
+                this.isStagingSnap = true;
+                this.stagedImageBase64 = base64Image;
+                this.stagedType = 'concept';
+
+                if (this.currentSubjectId !== 'all' && this.subjects.some(s => s.id === this.currentSubjectId)) {
+                    this.stagedSubjectId = this.currentSubjectId;
+                } else if (this.subjects.length > 0) {
+                    this.stagedSubjectId = this.subjects[0].id;
+                } else {
+                    this.stagedSubjectId = null;
+                }
+
+                this.updateTypeFilterUI('concept');
+                this.renderSubjectModeBar();
+                this.renderCard();
+            },
+
+            cancelStaging() {
+                this.isStagingSnap = false;
+                this.stagedImageBase64 = null;
+                this.updateTypeFilterUI(this.activeTypeFilter);
+                this.renderSubjectModeBar();
+                this.selectNextPhoto();
+            },
+
+            async saveStagingSnap() {
+                if (!this.stagedImageBase64) return;
+
+                if (!this.stagedSubjectId) {
+                    this.showConfirmModal('안내', '과목을 먼저 우상단 과목 관리 버튼에서 추가한 후 선택해주세요.', null, false);
+                    return;
+                }
+
+                await this.db.addPhoto(this.stagedImageBase64, this.stagedSubjectId, this.stagedType);
+                
+                this.isStagingSnap = false;
+                this.stagedImageBase64 = null;
+
+                await this.reloadData();
+                this.updateTypeFilterUI(this.activeTypeFilter);
+                this.selectNextPhoto();
+            },
+
+            async changeWeight(delta) {
+                if (!this.currentPhoto || this.isStagingSnap) return;
+
+                const newWeight = Math.max(1, Math.min(3, (this.currentPhoto.weight || 2) + delta));
+                this.currentPhoto.weight = newWeight;
+                document.getElementById('card-weight-val').innerText = newWeight;
+
+                await this.db.updatePhotoWeight(this.currentPhoto.id, newWeight);
+                
+                const item = this.photos.find(p => p.id === this.currentPhoto.id);
+                if (item) item.weight = newWeight;
+            },
+
+            triggerNextCardAnimation() {
+                const card = document.getElementById('flashcard');
+                card.style.opacity = '0';
+                card.style.transform = 'scale(0.96)';
+
+                setTimeout(() => {
+                    this.selectNextPhoto();
+                    card.style.opacity = '1';
+                    card.style.transform = 'scale(1)';
+                }, 140);
+            },
+
+            bindEvents() {
+                const cardViewport = document.getElementById('card-viewport');
+
+                // 키보드 단축키 지원 (스페이스바 / 화살표 키 누를 때 스냅 넘기기)
+                window.addEventListener('keydown', (e) => {
+                    if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+
+                    if (['Space', 'ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp'].includes(e.code) || e.key === ' ') {
+                        e.preventDefault();
+                        if (this.currentPhoto && !this.isCameraActive && !this.isStagingSnap) {
+                            this.triggerNextCardAnimation();
+                        }
+                    }
+                });
+
+                // Type filter buttons
+                document.getElementById('type-filter-concept').onclick = () => this.setTypeFilter('concept');
+                document.getElementById('type-filter-all').onclick = () => this.setTypeFilter('all');
+                document.getElementById('type-filter-problem').onclick = () => this.setTypeFilter('problem');
+
+                // Weight buttons
+                document.getElementById('btn-weight-down').onclick = () => this.changeWeight(-1);
+                document.getElementById('btn-weight-up').onclick = () => this.changeWeight(+1);
+
+                // Central Shutter Button (Normal -> Camera -> Staging Save)
+                document.getElementById('btn-add-photo').onclick = () => {
+                    if (this.isStagingSnap) {
+                        this.saveStagingSnap();
+                    } else if (!this.isCameraActive) {
+                        this.startLiveCamera();
+                    } else {
+                        this.captureCameraSnapshot();
+                    }
+                };
+
+                // Right Action Button (Cancel Staging / Cancel Camera / Delete Snap)
+                document.getElementById('btn-action-right').onclick = () => {
+                    if (this.isStagingSnap) {
+                        this.cancelStaging();
+                    } else if (this.isCameraActive) {
+                        this.stopLiveCamera();
+                    } else if (this.currentPhoto) {
+                        this.showConfirmModal(
+                            '스냅 삭제',
+                            '이 스냅을 정말 삭제하시겠습니까?',
+                            async () => {
+                                await this.db.deletePhoto(this.currentPhoto.id);
+                                await this.reloadData();
+                                this.selectNextPhoto();
+                            }
+                        );
+                    }
+                };
+
+                // Album selection button
+                document.getElementById('btn-album-preview').onclick = () => {
+                    if (this.isCameraActive) this.stopLiveCamera();
+                    document.getElementById('direct-file-input').click();
+                };
+
+                // File input handler
+                document.getElementById('direct-file-input').onchange = (e) => {
+                    const file = e.target.files && e.target.files[0];
+                    if (!file) return;
+
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        this.enterStagingMode(event.target.result);
+                    };
+                    reader.readAsDataURL(file);
+                    e.target.value = '';
+                };
+
+                // Touch Gesture on Card Viewport
+                cardViewport.addEventListener('touchstart', (e) => {
+                    this.touchStartX = e.touches[0].clientX;
+                    this.touchStartY = e.touches[0].clientY;
+                }, { passive: true });
+
+                cardViewport.addEventListener('touchend', (e) => {
+                    if (this.isCameraActive || this.isStagingSnap) return;
+
+                    const touchEndX = e.changedTouches[0].clientX;
+                    const touchEndY = e.changedTouches[0].clientY;
+
+                    const diffX = touchEndX - this.touchStartX;
+                    const diffY = touchEndY - this.touchStartY;
+
+                    // Swipe left / right for type filter
+                    if (Math.abs(diffX) > 45 && Math.abs(diffX) > Math.abs(diffY)) {
+                        if (diffX < 0) {
+                            if (this.activeTypeFilter === 'concept') this.setTypeFilter('all');
+                            else if (this.activeTypeFilter === 'all') this.setTypeFilter('problem');
+                        } else {
+                            if (this.activeTypeFilter === 'problem') this.setTypeFilter('all');
+                            else if (this.activeTypeFilter === 'all') this.setTypeFilter('concept');
+                        }
+                    } 
+                    // Swipe up / down for next snap
+                    else if (Math.abs(diffY) > 45 && Math.abs(diffY) > Math.abs(diffX)) {
+                        if (this.currentPhoto) this.triggerNextCardAnimation();
+                    } 
+                    // Tap handling
+                    else if (Math.abs(diffX) < 10 && Math.abs(diffY) < 10) {
+                        this.lastTapTime = Date.now();
+                        if (e.target.closest('button')) return;
+                        if (e.target.id === 'card-image') {
+                            this.openFullscreenPhoto();
+                        } else if (this.currentPhoto) {
+                            this.triggerNextCardAnimation();
+                        }
+                    }
+                });
+
+                cardViewport.onclick = (e) => {
+                    if (this.isCameraActive || this.isStagingSnap) return;
+                    if (e.target.closest('button')) return;
+                    if (Date.now() - this.lastTapTime < 300) return;
+
+                    if (e.target.id === 'card-image') {
+                        this.openFullscreenPhoto();
+                    } else if (this.currentPhoto) {
+                        this.triggerNextCardAnimation();
+                    }
+                };
+
+                const fullscreenModal = document.getElementById('modal-fullscreen-photo');
+                fullscreenModal.onclick = () => this.closeFullscreenPhoto();
+
+                // Manage Subjects modal triggers
+                document.getElementById('btn-manage-subjects').onclick = () => this.openSubjectsModal();
+                document.getElementById('modal-subjects-close').onclick = () => this.closeSubjectsModal();
+                document.getElementById('btn-create-subject').onclick = () => this.createNewSubject();
+            },
+
+            openFullscreenPhoto() {
+                if (!this.currentPhoto && !this.stagedImageBase64) return;
+                const modal = document.getElementById('modal-fullscreen-photo');
+                const img = document.getElementById('fullscreen-image');
+                img.src = this.isStagingSnap ? this.stagedImageBase64 : this.currentPhoto.imageData;
+
+                modal.classList.remove('hidden');
+                setTimeout(() => modal.classList.remove('opacity-0'), 10);
+            },
+
+            closeFullscreenPhoto() {
+                const modal = document.getElementById('modal-fullscreen-photo');
+                modal.classList.add('opacity-0');
+                setTimeout(() => modal.classList.add('hidden'), 200);
+            },
+
+            openSubjectsModal() {
+                this.renderSubjectManageList();
+                const modal = document.getElementById('modal-manage-subjects');
+                modal.classList.remove('hidden');
+                setTimeout(() => modal.classList.remove('opacity-0'), 10);
+            },
+
+            closeSubjectsModal() {
+                const modal = document.getElementById('modal-manage-subjects');
+                modal.classList.add('opacity-0');
+                setTimeout(() => modal.classList.add('hidden'), 200);
+            },
+
+            async createNewSubject() {
+                const input = document.getElementById('input-new-subject');
+                const name = input.value.trim();
+                if (!name) return;
+
+                await this.db.addSubject(name);
+                input.value = '';
+                await this.reloadData();
+                this.renderSubjectManageList();
+            },
+
+            renderSubjectManageList() {
+                const container = document.getElementById('subject-list-manage');
+                container.innerHTML = '';
+
+                if (this.subjects.length === 0) {
+                    container.innerHTML = '<p class="text-xs opacity-50 text-center py-4">등록된 과목이 없습니다.</p>';
+                    return;
+                }
+
+                this.subjects.forEach(subj => {
+                    const count = this.photos.filter(p => p.subjectId === subj.id).length;
+
+                    const row = document.createElement('div');
+                    row.className = 'flex items-center justify-between p-2.5 app-input-bg border border-white/10 rounded-xl text-xs';
+                    row.innerHTML = `
+                        <div class="flex items-center gap-2">
+                            <span class="font-medium text-white/90">${subj.name}</span>
+                            <span class="text-[10px] opacity-50">${count}개</span>
+                        </div>
+                        <button class="delete-subj-btn opacity-50 hover:opacity-100 hover:text-red-400 p-1 transition" data-id="${subj.id}" data-name="${subj.name}" data-count="${count}">
+                            <i class="fa-solid fa-trash text-xs"></i>
+                        </button>
+                    `;
+
+                    row.querySelector('.delete-subj-btn').onclick = (e) => {
+                        const targetId = e.currentTarget.getAttribute('data-id');
+                        const targetName = e.currentTarget.getAttribute('data-name');
+                        const photoCount = parseInt(e.currentTarget.getAttribute('data-count'), 10);
+
+                        this.showConfirmModal(
+                            '과목 삭제',
+                            `'${targetName}' 과목을 삭제하시겠습니까? (포함된 스냅 ${photoCount}개 함께 삭제)`,
+                            async () => {
+                                await this.db.deletePhotosBySubject(targetId);
+                                await this.db.deleteSubject(targetId);
+                                if (this.currentSubjectId === targetId) this.currentSubjectId = 'all';
+                                await this.reloadData();
+                                this.renderSubjectManageList();
+                                this.selectNextPhoto();
+                            }
+                        );
+                    };
+
+                    container.appendChild(row);
+                });
+            },
+
+            showConfirmModal(title, message, onOk, showCancel = true) {
+                const modal = document.getElementById('modal-confirm');
+                document.getElementById('confirm-title').innerText = title;
+                document.getElementById('confirm-message').innerText = message;
+
+                const cancelBtn = document.getElementById('confirm-cancel-btn');
+                const okBtn = document.getElementById('confirm-ok-btn');
+
+                if (showCancel) {
+                    cancelBtn.classList.remove('hidden');
+                } else {
+                    cancelBtn.classList.add('hidden');
+                }
+
+                cancelBtn.onclick = () => {
+                    modal.classList.add('opacity-0');
+                    setTimeout(() => modal.classList.add('hidden'), 200);
+                };
+
+                okBtn.onclick = async () => {
+                    modal.classList.add('opacity-0');
+                    setTimeout(() => modal.classList.add('hidden'), 200);
+                    if (onOk) await onOk();
+                };
+
+                modal.classList.remove('hidden');
+                setTimeout(() => modal.classList.remove('opacity-0'), 10);
+            }
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            App.init();
+        });
+    </script>
+</body>
+</html>
