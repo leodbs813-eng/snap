@@ -240,13 +240,13 @@
     <!-- MAIN REVIEW & CAMERA VIEWPORT CONTAINER -->
     <main class="flex-1 min-h-0 relative w-full flex flex-col items-center justify-center p-2 sm:p-4 overflow-hidden">
         
-        <div id="card-viewport" class="relative w-full max-w-md h-full max-h-full flex items-center justify-center cursor-pointer rounded-3xl overflow-hidden app-card-bg border border-white/10 shadow-2xl">
+        <div id="card-viewport" class="relative max-w-full max-h-full flex items-center justify-center cursor-pointer rounded-3xl overflow-hidden app-card-bg border border-white/10 shadow-2xl transition-all duration-200" style="aspect-ratio: 3/4;">
             
             <!-- 카드 본체 -->
-            <div id="flashcard" class="w-full h-full flex flex-col items-center justify-center relative p-2 card-transition">
+            <div id="flashcard" class="w-full h-full flex flex-col items-center justify-center relative p-0 card-transition">
                 
                 <!-- 1. 스냅 이미지 -->
-                <img id="card-image" class="w-full h-full object-contain rounded-2xl select-none hidden" alt="스냅" />
+                <img id="card-image" class="w-full h-full object-cover rounded-2xl select-none hidden" alt="스냅" />
 
                 <!-- 2. 실시간 라이브 카메라 비디오 피드 -->
                 <video id="camera-feed" autoplay playsinline class="w-full h-full object-cover rounded-2xl hidden"></video>
@@ -573,6 +573,17 @@
             touchStartY: 0,
             lastTapTime: 0,
 
+            // 동적 비율 맞춤 함수 (카메라/이미지 원본 비율 반영)
+            updateViewportAspectRatio(w, h) {
+                const viewport = document.getElementById('card-viewport');
+                if (!viewport) return;
+                if (w && h && w > 0 && h > 0) {
+                    viewport.style.aspectRatio = `${w} / ${h}`;
+                } else {
+                    viewport.style.aspectRatio = '3/4';
+                }
+            },
+
             async init() {
                 this.db = new FlashcardDB();
                 await this.db.init();
@@ -807,7 +818,14 @@
                     infoBadge.classList.add('hidden');
                     weightBadge.classList.add('hidden');
 
+                    imgEl.onload = () => {
+                        this.updateViewportAspectRatio(imgEl.naturalWidth, imgEl.naturalHeight);
+                    };
                     imgEl.src = this.stagedImageBase64;
+                    if (imgEl.complete && imgEl.naturalWidth) {
+                        this.updateViewportAspectRatio(imgEl.naturalWidth, imgEl.naturalHeight);
+                    }
+
                     imgEl.classList.remove('hidden');
                     stagingBadge.classList.remove('hidden');
 
@@ -840,6 +858,13 @@
                     emptyEl.classList.add('hidden');
                     infoBadge.classList.add('hidden');
                     weightBadge.classList.add('hidden');
+
+                    videoEl.onloadedmetadata = () => {
+                        this.updateViewportAspectRatio(videoEl.videoWidth, videoEl.videoHeight);
+                    };
+                    if (videoEl.videoWidth && videoEl.videoHeight) {
+                        this.updateViewportAspectRatio(videoEl.videoWidth, videoEl.videoHeight);
+                    }
 
                     videoEl.classList.remove('hidden');
                     cameraBadge.classList.remove('hidden');
@@ -875,6 +900,8 @@
                     weightBadge.classList.add('hidden');
                     emptyEl.classList.remove('hidden');
 
+                    this.updateViewportAspectRatio(0, 0);
+
                     btnRight.disabled = true;
                     btnDown.disabled = true;
                     btnUp.disabled = true;
@@ -888,7 +915,13 @@
                 }
 
                 emptyEl.classList.add('hidden');
+                imgEl.onload = () => {
+                    this.updateViewportAspectRatio(imgEl.naturalWidth, imgEl.naturalHeight);
+                };
                 imgEl.src = this.currentPhoto.imageData;
+                if (imgEl.complete && imgEl.naturalWidth) {
+                    this.updateViewportAspectRatio(imgEl.naturalWidth, imgEl.naturalHeight);
+                }
                 imgEl.classList.remove('hidden');
                 infoBadge.classList.remove('hidden');
                 weightBadge.classList.remove('hidden');
