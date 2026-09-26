@@ -1,9 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <link class="icon-png" rel="icon" href="/IMG_6614.jpeg" type="image/png">                
-    <link rel="apple-touch-icon" href="/IMG_6614.jpeg">                
-    <link class="icon-png-dup" rel="icon" href="/IMG_6614.jpeg" type="image/png">                
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>snap</title>
@@ -46,6 +43,8 @@
             -webkit-user-select: none;
             background-color: #000000;
             color: #f1f5f9;
+            height: 100vh;
+            height: 100dvh;
         }
         .no-scrollbar::-webkit-scrollbar {
             display: none;
@@ -53,18 +52,6 @@
         .no-scrollbar {
             -ms-overflow-style: none;
             scrollbar-width: none;
-        }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Pretendard", "Noto Sans KR", sans-serif;
-            touch-action: manipulation;
-            -webkit-tap-highlight-color: transparent;
-            user-select: none;
-            -webkit-user-select: none;
-            background-color: #000000;
-            color: #f1f5f9;
-            height: 100vh;
-            height: 100dvh;
         }
 
         .card-transition {
@@ -235,7 +222,6 @@
 
         <!-- 우측 모드 전환 버튼 및 과목 관리 버튼 -->
         <div class="flex items-center gap-2 shrink-0">
-            <!-- 랜덤/순서대로 모드 전환 버튼 (텍스트 제거, 아이콘만 유지) -->
             <button id="btn-toggle-mode" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 flex items-center justify-center transition shrink-0" title="재생 모드 전환">
                 <i id="mode-icon" class="fa-solid fa-shuffle text-xs text-iosYellow"></i>
             </button>
@@ -315,33 +301,28 @@
             </button>
         </div>
 
-        <!-- 2. 통일된 5개 버튼 하단 조작 바 (모드 변경 시에도 레이아웃 유지) -->
+        <!-- 2. 통일된 5개 버튼 하단 조작 바 -->
         <div id="unified-action-bar" class="w-full max-w-md grid grid-cols-5 items-center justify-items-center gap-1">
             
-            <!-- 1st: 앨범 선택 버튼 -->
             <button id="btn-album-preview" class="w-10 h-10 rounded-2xl border border-white/20 bg-zinc-900 overflow-hidden flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition relative" title="앨범에서 가져오기">
                 <img id="album-thumb-img" class="w-full h-full object-cover hidden" alt="앨범" />
                 <i id="album-thumb-icon" class="fa-regular fa-images text-white/70 text-xs"></i>
             </button>
 
-            <!-- 2nd: 중요도 낮추기 (-1) -->
             <button id="btn-weight-down" disabled class="flex flex-col items-center justify-center w-9 h-9 rounded-full bg-white/10 border border-white/10 hover:bg-white/20 text-amber-400 disabled:opacity-20 disabled:pointer-events-none transition active:scale-95" title="중요도 -">
                 <i class="fa-solid fa-minus text-xs font-bold"></i>
             </button>
 
-            <!-- 3rd: 중앙 메인 버튼 (촬영 / 촬영 중 캡처 / 스냅 저장) -->
             <button id="btn-add-photo" class="shutter-outer transition cursor-pointer" title="스냅 촬영">
                 <div id="shutter-inner" class="shutter-inner">
                     <i id="shutter-icon" class="fa-solid fa-check text-lg hidden"></i>
                 </div>
             </button>
 
-            <!-- 4th: 중요도 높이기 (+1) -->
             <button id="btn-weight-up" disabled class="flex flex-col items-center justify-center w-9 h-9 rounded-full bg-white/10 border border-white/10 hover:bg-white/20 text-emerald-400 disabled:opacity-20 disabled:pointer-events-none transition active:scale-95" title="중요도 +">
                 <i class="fa-solid fa-plus text-xs font-bold"></i>
             </button>
 
-            <!-- 5th: 우측 끝 액션 버튼 (스냅 삭제 / 취소) -->
             <button id="btn-action-right" disabled class="flex flex-col items-center justify-center w-9 h-9 rounded-full bg-white/10 border border-white/10 hover:bg-red-500/20 hover:border-red-500/40 text-white/80 hover:text-red-400 disabled:opacity-20 disabled:pointer-events-none transition active:scale-95" title="삭제 / 취소">
                 <i id="action-right-icon" class="fa-solid fa-trash-can text-xs"></i>
             </button>
@@ -358,26 +339,47 @@
 
     </footer>
 
-    <!-- MODAL 1: 과목 관리 모달 -->
+    <!-- MODAL 1: 과목 관리 및 갤러리 모달 -->
     <div id="modal-manage-subjects" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden transition-opacity duration-200 opacity-0">
-        <div class="app-modal-bg border w-full max-w-sm rounded-t-3xl sm:rounded-3xl p-5 max-h-[85vh] flex flex-col shadow-2xl">
+        <div class="app-modal-bg border w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 max-h-[85vh] flex flex-col shadow-2xl">
+            
+            <!-- Modal Header -->
             <div class="flex items-center justify-between pb-3 mb-3 border-b border-white/10">
-                <h2 class="text-xs font-bold uppercase tracking-wider text-white/90">과목 관리</h2>
+                <div class="flex items-center gap-2">
+                    <button id="modal-back-btn" class="hidden text-xs text-iosYellow hover:underline flex items-center gap-1 font-bold">
+                        <i class="fa-solid fa-chevron-left text-[10px]"></i> 과목 목록
+                    </button>
+                    <h2 id="modal-main-title" class="text-xs font-bold uppercase tracking-wider text-white/90">과목 관리</h2>
+                </div>
                 <button id="modal-subjects-close" class="opacity-50 hover:opacity-100 p-1 text-white">
                     <i class="fa-solid fa-xmark text-base"></i>
                 </button>
             </div>
 
-            <div class="flex gap-2 mb-3">
-                <input type="text" id="input-new-subject" placeholder="새 과목 이름" class="flex-1 app-input-bg border border-white/10 rounded-xl px-3 py-2 text-xs focus:outline-none" maxlength="15">
-                <button id="btn-create-subject" class="app-btn-primary font-bold text-xs px-3 py-2 rounded-xl shrink-0">
-                    추가
-                </button>
+            <!-- View 1: Subject List & Creation -->
+            <div id="modal-view-subjects" class="flex flex-col flex-1 min-h-0">
+                <div class="flex gap-2 mb-3">
+                    <input type="text" id="input-new-subject" placeholder="새 과목 이름" class="flex-1 app-input-bg border border-white/10 rounded-xl px-3 py-2 text-xs focus:outline-none" maxlength="15">
+                    <button id="btn-create-subject" class="app-btn-primary font-bold text-xs px-3 py-2 rounded-xl shrink-0">
+                        추가
+                    </button>
+                </div>
+                <div class="flex-1 overflow-y-auto space-y-1.5 pr-1 no-scrollbar my-1" id="subject-list-manage">
+                    <!-- Dynamic subject list -->
+                </div>
             </div>
 
-            <div class="flex-1 overflow-y-auto space-y-1.5 pr-1 no-scrollbar my-1" id="subject-list-manage">
-                <!-- Dynamic subject list -->
+            <!-- View 2: Photo Gallery Grid (3 columns, iOS Photos style) -->
+            <div id="modal-view-gallery" class="flex flex-col flex-1 min-h-0 hidden">
+                <div class="flex items-center justify-between mb-2">
+                    <span id="gallery-subject-title" class="text-xs font-bold text-iosYellow">과목명</span>
+                    <span class="text-[11px] opacity-50">카드를 꾹 눌러 순서 변경 | 탭하여 크게 보기</span>
+                </div>
+                <div class="flex-1 overflow-y-auto pr-1 no-scrollbar my-1 grid grid-cols-3 gap-2" id="subject-photo-gallery-grid">
+                    <!-- Dynamic photo grid -->
+                </div>
             </div>
+
         </div>
     </div>
 
@@ -394,17 +396,25 @@
     </div>
 
     <!-- MODAL 3: Fullscreen Snap Viewer -->
-    <div id="modal-fullscreen-photo" class="fixed inset-0 bg-black z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200 cursor-pointer select-none">
-        <button id="fullscreen-close-btn" class="absolute top-4 right-4 z-10 w-10 h-10 bg-black/60 hover:bg-black/80 text-white rounded-full flex items-center justify-center border border-white/20 backdrop-blur-md">
-            <i class="fa-solid fa-xmark text-lg"></i>
-        </button>
-        <img id="fullscreen-image" class="max-w-full max-h-full object-contain select-none" alt="전체화면 스냅" />
+    <div id="modal-fullscreen-photo" class="fixed inset-0 bg-black z-50 flex flex-col justify-between hidden opacity-0 transition-opacity duration-200 select-none">
+        <!-- Top bar with close and delete button -->
+        <div class="flex items-center justify-between p-4 z-10 bg-gradient-to-b from-black/80 to-transparent">
+            <button id="fullscreen-close-btn" class="w-10 h-10 bg-black/60 hover:bg-black/80 text-white rounded-full flex items-center justify-center border border-white/20 backdrop-blur-md transition active:scale-95">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <button id="fullscreen-delete-btn" class="w-10 h-10 bg-red-600/80 hover:bg-red-600 text-white rounded-full flex items-center justify-center border border-red-500/30 backdrop-blur-md transition active:scale-95 shadow-lg" title="스냅 삭제">
+                <i class="fa-solid fa-trash-can text-sm"></i>
+            </button>
+        </div>
+        <!-- Center image container -->
+        <div class="flex-1 flex items-center justify-center p-2 overflow-hidden">
+            <img id="fullscreen-image" class="max-w-full max-h-full object-contain select-none" alt="전체화면 스냅" />
+        </div>
+        <!-- Bottom spacing -->
+        <div class="h-12"></div>
     </div>
 
     <script>
-        /**
-         * IndexedDB storage wrapper for subjects and snaps
-         */
         class FlashcardDB {
             constructor() {
                 this.dbName = 'MemoRE_PhotoReview_DB';
@@ -554,6 +564,22 @@
                     };
                 });
             }
+
+            async updatePhotoCreatedAt(id, newCreatedAt) {
+                return new Promise((resolve) => {
+                    const tx = this.db.transaction('photos', 'readwrite');
+                    const store = tx.objectStore('photos');
+                    const getReq = store.get(id);
+                    getReq.onsuccess = () => {
+                        const item = getReq.result;
+                        if (item) {
+                            item.createdAt = newCreatedAt;
+                            store.put(item);
+                        }
+                        resolve(true);
+                    };
+                });
+            }
         }
 
         const App = {
@@ -562,14 +588,13 @@
             photos: [],
             
             currentSubjectId: 'all',
-            activeTypeFilter: 'all', // 'all', 'concept', 'problem'
-            playMode: 'random', // 'random' 또는 'sequential' (순서대로: 오래된순)
-            sequentialIndex: 0, // 순서대로 모드일 때 현재 인덱스
+            activeTypeFilter: 'all',
+            playMode: 'random',
+            sequentialIndex: 0,
 
             currentPhoto: null,
             lastPhotoId: null,
 
-            // Live Camera & Staging states
             isCameraActive: false,
             isStagingSnap: false,
             stagedImageBase64: null,
@@ -579,7 +604,6 @@
             mediaStream: null,
             isSliderScrolling: false,
 
-            // Reels/Shorts style smooth touch & animation states
             touchStartX: 0,
             touchStartY: 0,
             touchMoveY: 0,
@@ -587,7 +611,10 @@
             isAnimating: false,
             lastTapTime: 0,
 
-            // 동적 비율 맞춤 함수 (카메라/이미지 원본 비율 반영)
+            // 모달 내 갤러리 관리 상태
+            activeModalView: 'subjects', // 'subjects' 또는 'gallery'
+            selectedManageSubjectId: null,
+
             updateViewportAspectRatio(w, h) {
                 const viewport = document.getElementById('card-viewport');
                 if (!viewport) return;
@@ -616,6 +643,11 @@
 
                 this.renderSubjectModeBar();
                 this.updateAlbumThumbnail();
+
+                // 모달이 갤러리 뷰 상태라면 새로고침 반영
+                if (this.activeModalView === 'gallery' && this.selectedManageSubjectId) {
+                    this.renderSubjectPhotoGallery(this.selectedManageSubjectId);
+                }
             },
 
             updateAlbumThumbnail() {
@@ -640,7 +672,6 @@
                     return matchesSubject && matchesType;
                 });
 
-                // 순서대로 모드일 경우 생성일 기준 오름차순(오래된 순) 정렬
                 if (this.playMode === 'sequential') {
                     filtered.sort((a, b) => a.createdAt - b.createdAt);
                 }
@@ -683,7 +714,6 @@
                     return;
                 }
 
-                // Random mode
                 if (candidatePhotos.length === 1) {
                     this.currentPhoto = candidatePhotos[0];
                     this.lastPhotoId = this.currentPhoto.id;
@@ -792,7 +822,6 @@
                     }
                 });
 
-                // Fast scroll calculation using requestAnimationFrame (snappy & immediate response)
                 container.onscroll = () => {
                     if (this.isSliderScrolling) return;
                     this.isSliderScrolling = true;
@@ -859,7 +888,6 @@
                 const btnUp = document.getElementById('btn-weight-up');
                 const btnAlbum = document.getElementById('btn-album-preview');
 
-                // 1. Staging Mode (Shot taken, choosing subject/type directly on home view)
                 if (this.isStagingSnap) {
                     videoEl.classList.add('hidden');
                     cameraBadge.classList.add('hidden');
@@ -878,7 +906,6 @@
                     imgEl.classList.remove('hidden');
                     stagingBadge.classList.remove('hidden');
 
-                    // Unified 5-button layout transformations
                     shutterOuter.className = 'shutter-outer staging-mode transition cursor-pointer';
                     shutterIcon.classList.remove('hidden');
                     shutterOuter.title = '스냅 저장';
@@ -896,12 +923,10 @@
                     return;
                 }
 
-                // Restore Review / Live camera normal layout
                 document.getElementById('type-filter-all').classList.remove('hidden');
                 stagingBadge.classList.add('hidden');
                 btnAlbum.classList.remove('opacity-30', 'pointer-events-none');
 
-                // 2. Camera Active Mode
                 if (this.isCameraActive) {
                     imgEl.classList.add('hidden');
                     emptyEl.classList.add('hidden');
@@ -932,7 +957,6 @@
                     return;
                 }
 
-                // 3. Normal Review Mode
                 videoEl.classList.add('hidden');
                 cameraBadge.classList.add('hidden');
 
@@ -1112,30 +1136,25 @@
                 const exitY = isUp ? '-110%' : '110%';
                 const enterY = isUp ? '110%' : '-110%';
 
-                // 손가락으로 드래그 중이던 위치에서 자연스럽게 이어서 전환 시작
                 if (startY !== 0) {
                     card.style.transform = `translate3d(0, ${startY}px, 0) scale(0.96)`;
                 }
                 
                 void card.offsetHeight;
 
-                // 1단계: 기존 카드가 멈춤 없이 뷰포트 밖으로 완전히 빠르게 가속하며 이탈
                 card.style.transition = 'transform 0.18s cubic-bezier(0.4, 0, 0.6, 1), opacity 0.18s ease-in';
                 card.style.transform = `translate3d(0, ${exitY}, 0) scale(0.92)`;
                 card.style.opacity = '0';
 
                 setTimeout(() => {
-                    // 화면 밖에서 다음 사진 데이터 교체
                     this.selectNextPhoto();
 
-                    // 다음 카드를 반대편 화면 바깥에 즉시 배치 (애니메이션 없음)
                     card.style.transition = 'none';
                     card.style.transform = `translate3d(0, ${enterY}, 0) scale(0.92)`;
                     card.style.opacity = '0';
                     
                     void card.offsetHeight;
 
-                    // 2단계: 새 카드가 부드럽게 감속하며 중앙으로 들어옴
                     requestAnimationFrame(() => {
                         card.style.transition = 'transform 0.24s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease-out';
                         card.style.transform = 'translate3d(0, 0, 0) scale(1)';
@@ -1151,13 +1170,11 @@
             bindEvents() {
                 const cardViewport = document.getElementById('card-viewport');
 
-                // 모드 전환 버튼 이벤트 연결
                 document.getElementById('btn-toggle-mode').onclick = () => {
                     if (this.isCameraActive || this.isStagingSnap) return;
                     this.togglePlayMode();
                 };
 
-                // 키보드 단축키 지원 (스페이스바 / 화살표 키 누를 때 스냅 넘기기)
                 window.addEventListener('keydown', (e) => {
                     if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
 
@@ -1169,16 +1186,13 @@
                     }
                 });
 
-                // Type filter buttons
                 document.getElementById('type-filter-concept').onclick = () => this.setTypeFilter('concept');
                 document.getElementById('type-filter-all').onclick = () => this.setTypeFilter('all');
                 document.getElementById('type-filter-problem').onclick = () => this.setTypeFilter('problem');
 
-                // Weight buttons
                 document.getElementById('btn-weight-down').onclick = () => this.changeWeight(-1);
                 document.getElementById('btn-weight-up').onclick = () => this.changeWeight(+1);
 
-                // Central Shutter Button (Normal -> Camera -> Staging Save)
                 document.getElementById('btn-add-photo').onclick = () => {
                     if (this.isStagingSnap) {
                         this.saveStagingSnap();
@@ -1189,7 +1203,6 @@
                     }
                 };
 
-                // Right Action Button (Cancel Staging / Cancel Camera / Delete Snap)
                 document.getElementById('btn-action-right').onclick = () => {
                     if (this.isStagingSnap) {
                         this.cancelStaging();
@@ -1208,13 +1221,11 @@
                     }
                 };
 
-                // Album selection button
                 document.getElementById('btn-album-preview').onclick = () => {
                     if (this.isCameraActive) this.stopLiveCamera();
                     document.getElementById('direct-file-input').click();
                 };
 
-                // File input handler
                 document.getElementById('direct-file-input').onchange = (e) => {
                     const file = e.target.files && e.target.files[0];
                     if (!file) return;
@@ -1241,7 +1252,6 @@
                     const diffY = currentY - this.touchStartY;
                     this.touchMoveY = diffY;
 
-                    // Real-time smooth finger tracking like Reels
                     const card = document.getElementById('flashcard');
                     if (card && Math.abs(diffY) > 5) {
                         card.style.transition = 'none';
@@ -1264,13 +1274,10 @@
                     const diffY = touchEndY - this.touchStartY;
                     const card = document.getElementById('flashcard');
 
-                    // 1. Swipe Up / Down (Reels / TikTok style photo slide)
                     if (Math.abs(diffY) > 40 && Math.abs(diffY) > Math.abs(diffX)) {
                         const direction = diffY < 0 ? 'up' : 'down';
                         this.triggerNextCardAnimation(direction, diffY);
-                    } 
-                    // 2. Horizontal Swipe for Type Filter (Concept / All / Problem)
-                    else if (Math.abs(diffX) > 45 && Math.abs(diffX) > Math.abs(diffY)) {
+                    } else if (Math.abs(diffX) > 45 && Math.abs(diffX) > Math.abs(diffY)) {
                         if (card) {
                             card.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
                             card.style.transform = 'translate3d(0, 0, 0) scale(1)';
@@ -1283,9 +1290,7 @@
                             if (this.activeTypeFilter === 'problem') this.setTypeFilter('all');
                             else if (this.activeTypeFilter === 'all') this.setTypeFilter('concept');
                         }
-                    } 
-                    // 3. Tap / Click Handlers
-                    else {
+                    } else {
                         if (card) {
                             card.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
                             card.style.transform = 'translate3d(0, 0, 0) scale(1)';
@@ -1321,6 +1326,7 @@
                 // Manage Subjects modal triggers
                 document.getElementById('btn-manage-subjects').onclick = () => this.openSubjectsModal();
                 document.getElementById('modal-subjects-close').onclick = () => this.closeSubjectsModal();
+                document.getElementById('modal-back-btn').onclick = () => this.switchModalView('subjects');
                 document.getElementById('btn-create-subject').onclick = () => this.createNewSubject();
             },
 
@@ -1328,7 +1334,32 @@
                 if (!this.currentPhoto && !this.stagedImageBase64) return;
                 const modal = document.getElementById('modal-fullscreen-photo');
                 const img = document.getElementById('fullscreen-image');
-                img.src = this.isStagingSnap ? this.stagedImageBase64 : this.currentPhoto.imageData;
+                const deleteBtn = document.getElementById('fullscreen-delete-btn');
+                
+                const imgSrc = this.isStagingSnap ? this.stagedImageBase64 : this.currentPhoto.imageData;
+                const photoId = this.isStagingSnap ? null : this.currentPhoto.id;
+                
+                img.src = imgSrc;
+
+                if (this.isStagingSnap || !photoId) {
+                    deleteBtn.classList.add('hidden');
+                } else {
+                    deleteBtn.classList.remove('hidden');
+                    deleteBtn.onclick = () => {
+                        this.showConfirmModal(
+                            '스냅 삭제',
+                            '이 스냅을 정말 삭제하시겠습니까?',
+                            async () => {
+                                await this.db.deletePhoto(photoId);
+                                await this.reloadData();
+                                this.closeFullscreenPhoto();
+                                this.selectNextPhoto();
+                            }
+                        );
+                    };
+                }
+
+                document.getElementById('fullscreen-close-btn').onclick = () => this.closeFullscreenPhoto();
 
                 modal.classList.remove('hidden');
                 setTimeout(() => modal.classList.remove('opacity-0'), 10);
@@ -1341,6 +1372,7 @@
             },
 
             openSubjectsModal() {
+                this.switchModalView('subjects');
                 this.renderSubjectManageList();
                 const modal = document.getElementById('modal-manage-subjects');
                 modal.classList.remove('hidden');
@@ -1351,6 +1383,30 @@
                 const modal = document.getElementById('modal-manage-subjects');
                 modal.classList.add('opacity-0');
                 setTimeout(() => modal.classList.add('hidden'), 200);
+            },
+
+            switchModalView(viewName, subjectId = null) {
+                this.activeModalView = viewName;
+                const viewSubjects = document.getElementById('modal-view-subjects');
+                const viewGallery = document.getElementById('modal-view-gallery');
+                const backBtn = document.getElementById('modal-back-btn');
+                const mainTitle = document.getElementById('modal-main-title');
+
+                if (viewName === 'subjects') {
+                    viewGallery.classList.add('hidden');
+                    viewSubjects.classList.remove('hidden');
+                    backBtn.classList.add('hidden');
+                    mainTitle.classList.remove('hidden');
+                    this.selectedManageSubjectId = null;
+                    this.renderSubjectManageList();
+                } else if (viewName === 'gallery') {
+                    viewSubjects.classList.add('hidden');
+                    viewGallery.classList.remove('hidden');
+                    backBtn.classList.remove('hidden');
+                    mainTitle.classList.add('hidden');
+                    this.selectedManageSubjectId = subjectId;
+                    this.renderSubjectPhotoGallery(subjectId);
+                }
             },
 
             async createNewSubject() {
@@ -1377,18 +1433,28 @@
                     const count = this.photos.filter(p => p.subjectId === subj.id).length;
 
                     const row = document.createElement('div');
-                    row.className = 'flex items-center justify-between p-2.5 app-input-bg border border-white/10 rounded-xl text-xs';
+                    row.className = 'flex items-center justify-between p-2.5 app-input-bg border border-white/10 rounded-xl text-xs cursor-pointer hover:border-iosYellow/50 transition';
                     row.innerHTML = `
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 flex-1">
                             <span class="font-medium text-white/90">${subj.name}</span>
-                            <span class="text-[10px] opacity-50">${count}개</span>
+                            <span class="text-[10px] opacity-50">(${count}개)</span>
                         </div>
-                        <button class="delete-subj-btn opacity-50 hover:opacity-100 hover:text-red-400 p-1 transition" data-id="${subj.id}" data-name="${subj.name}" data-count="${count}">
-                            <i class="fa-solid fa-trash text-xs"></i>
-                        </button>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] text-iosYellow font-semibold opacity-80 flex items-center gap-1">갤러리 <i class="fa-solid fa-chevron-right text-[9px]"></i></span>
+                            <button class="delete-subj-btn opacity-50 hover:opacity-100 hover:text-red-400 p-1 transition" data-id="${subj.id}" data-name="${subj.name}" data-count="${count}" title="과목 삭제">
+                                <i class="fa-solid fa-trash text-xs"></i>
+                            </button>
+                        </div>
                     `;
 
+                    // 행 클릭 시 갤러리 뷰로 이동
+                    row.onclick = (e) => {
+                        if (e.target.closest('.delete-subj-btn')) return;
+                        this.switchModalView('gallery', subj.id);
+                    };
+
                     row.querySelector('.delete-subj-btn').onclick = (e) => {
+                        e.stopPropagation();
                         const targetId = e.currentTarget.getAttribute('data-id');
                         const targetName = e.currentTarget.getAttribute('data-name');
                         const photoCount = parseInt(e.currentTarget.getAttribute('data-count'), 10);
@@ -1409,6 +1475,177 @@
 
                     container.appendChild(row);
                 });
+            },
+
+            renderSubjectPhotoGallery(subjectId) {
+                const subj = this.subjects.find(s => s.id === subjectId);
+                const titleEl = document.getElementById('gallery-subject-title');
+                if (subj) titleEl.innerText = `${subj.name} 갤러리`;
+
+                const gridContainer = document.getElementById('subject-photo-gallery-grid');
+                gridContainer.innerHTML = '';
+
+                const subjectPhotos = this.photos
+                    .filter(p => p.subjectId === subjectId)
+                    .sort((a, b) => a.createdAt - b.createdAt);
+
+                if (subjectPhotos.length === 0) {
+                    gridContainer.innerHTML = '<div class="col-span-3 text-center py-10 text-xs opacity-50">이 과목에 등록된 스냅이 없습니다.</div>';
+                    return;
+                }
+
+                let draggedPhotoId = null;
+
+                subjectPhotos.forEach((photo, idx) => {
+                    const cell = document.createElement('div');
+                    cell.className = 'relative aspect-3/4 rounded-xl overflow-hidden bg-zinc-900 border border-white/10 group shadow-md flex flex-col cursor-grab active:cursor-grabbing transition-transform touch-none';
+                    cell.setAttribute('draggable', 'true');
+                    cell.setAttribute('data-id', photo.id);
+
+                    cell.innerHTML = `
+                        <img src="${photo.imageData}" class="w-full h-full object-cover select-none pointer-events-none" alt="스냅" />
+                        <div class="absolute top-1.5 left-1.5 bg-black/70 text-[10px] font-bold px-1.5 py-0.5 rounded-md text-white/90 backdrop-blur-sm pointer-events-none">
+                            ${idx + 1}
+                        </div>
+                    `;
+
+                    // Tap to open full screen image preview
+                    cell.onclick = (e) => {
+                        e.stopPropagation();
+                        const modal = document.getElementById('modal-fullscreen-photo');
+                        const img = document.getElementById('fullscreen-image');
+                        const deleteBtn = document.getElementById('fullscreen-delete-btn');
+                        
+                        img.src = photo.imageData;
+                        deleteBtn.classList.remove('hidden');
+                        deleteBtn.onclick = () => {
+                            this.showConfirmModal(
+                                '스냅 삭제',
+                                '이 스냅을 정말 삭제하시겠습니까?',
+                                async () => {
+                                    await this.db.deletePhoto(photo.id);
+                                    await this.reloadData();
+                                    this.closeFullscreenPhoto();
+                                    this.renderSubjectPhotoGallery(subjectId);
+                                    this.selectNextPhoto();
+                                }
+                            );
+                        };
+
+                        document.getElementById('fullscreen-close-btn').onclick = () => this.closeFullscreenPhoto();
+
+                        modal.classList.remove('hidden');
+                        setTimeout(() => modal.classList.remove('opacity-0'), 10);
+                    };
+
+                    // HTML5 Drag and Drop Handlers for Desktop
+                    cell.addEventListener('dragstart', (e) => {
+                        draggedPhotoId = photo.id;
+                        e.dataTransfer.setData('text/plain', photo.id);
+                        setTimeout(() => cell.classList.add('opacity-40'), 0);
+                    });
+
+                    cell.addEventListener('dragend', () => {
+                        cell.classList.remove('opacity-40');
+                        draggedPhotoId = null;
+                        gridContainer.querySelectorAll('.border-iosYellow').forEach(el => el.classList.remove('border-iosYellow', 'border-2'));
+                    });
+
+                    cell.addEventListener('dragover', (e) => {
+                        e.preventDefault();
+                        cell.classList.add('border-2', 'border-iosYellow');
+                    });
+
+                    cell.addEventListener('dragleave', () => {
+                        cell.classList.remove('border-iosYellow', 'border-2');
+                    });
+
+                    cell.addEventListener('drop', async (e) => {
+                        e.preventDefault();
+                        cell.classList.remove('border-iosYellow', 'border-2');
+                        const draggedId = e.dataTransfer.getData('text/plain') || draggedPhotoId;
+                        if (!draggedId || draggedId === photo.id) return;
+
+                        await this.reorderPhotos(draggedId, photo.id, subjectPhotos, subjectId);
+                    });
+
+                    // Mobile Touch Drag-and-Drop Handlers (No clone, just opacity feedback)
+                    let touchTimeout = null;
+                    let isLongPressDragging = false;
+
+                    cell.addEventListener('touchstart', (e) => {
+                        touchTimeout = setTimeout(() => {
+                            isLongPressDragging = true;
+                            draggedPhotoId = photo.id;
+                            cell.classList.add('opacity-40', 'scale-95');
+                        }, 300); // 300ms long press to activate drag state
+                    }, { passive: true });
+
+                    cell.addEventListener('touchmove', (e) => {
+                        if (!isLongPressDragging) {
+                            clearTimeout(touchTimeout);
+                            return;
+                        }
+                        const touch = e.touches[0];
+                        const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+                        const targetCell = elemBelow ? elemBelow.closest('[data-id]') : null;
+
+                        gridContainer.querySelectorAll('[data-id]').forEach(el => {
+                            if (el === targetCell && el !== cell) {
+                                el.classList.add('border-2', 'border-iosYellow');
+                            } else {
+                                el.classList.remove('border-2', 'border-iosYellow');
+                            }
+                        });
+                    }, { passive: true });
+
+                    cell.addEventListener('touchend', async (e) => {
+                        clearTimeout(touchTimeout);
+
+                        if (!isLongPressDragging) return;
+                        isLongPressDragging = false;
+                        cell.classList.remove('opacity-40', 'scale-95');
+
+                        const touch = e.changedTouches[0];
+                        const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+                        const targetCell = elemBelow ? elemBelow.closest('[data-id]') : null;
+
+                        gridContainer.querySelectorAll('.border-iosYellow').forEach(el => el.classList.remove('border-iosYellow', 'border-2'));
+
+                        if (targetCell) {
+                            const targetId = targetCell.getAttribute('data-id');
+                            if (draggedPhotoId && targetId && draggedPhotoId !== targetId) {
+                                await this.reorderPhotos(draggedPhotoId, targetId, subjectPhotos, subjectId);
+                            }
+                        }
+                        draggedPhotoId = null;
+                    });
+
+                    gridContainer.appendChild(cell);
+                });
+            },
+
+            async reorderPhotos(draggedId, targetId, subjectPhotos, subjectId) {
+                const draggedPhoto = subjectPhotos.find(p => p.id === draggedId);
+                const targetPhoto = subjectPhotos.find(p => p.id === targetId);
+                if (!draggedPhoto || !targetPhoto) return;
+
+                const draggedIdx = subjectPhotos.findIndex(p => p.id === draggedId);
+                const targetIdx = subjectPhotos.findIndex(p => p.id === targetPhoto.id);
+
+                if (draggedIdx < targetIdx) {
+                    const nextPhoto = subjectPhotos[targetIdx + 1];
+                    const newCreatedAt = nextPhoto ? (targetPhoto.createdAt + nextPhoto.createdAt) / 2 : targetPhoto.createdAt + 1000;
+                    await this.db.updatePhotoCreatedAt(draggedId, newCreatedAt);
+                } else {
+                    const prevPhoto = subjectPhotos[targetIdx - 1];
+                    const newCreatedAt = prevPhoto ? (prevPhoto.createdAt + targetPhoto.createdAt) / 2 : targetPhoto.createdAt - 1000;
+                    await this.db.updatePhotoCreatedAt(draggedId, newCreatedAt);
+                }
+
+                await this.reloadData();
+                this.renderSubjectPhotoGallery(subjectId);
+                this.selectNextPhoto();
             },
 
             showConfirmModal(title, message, onOk, showCancel = true) {
